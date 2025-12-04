@@ -1,0 +1,15 @@
+{
+  "mcpServers": {
+    "sidstack": {
+      "type": "stdio",
+      "command": "node",
+      "args": [
+        "/Users/chuongle/tools/sidstack/packages/mcp-server/dist/server.js"
+      ],
+      "env": {
+        "GRAPH_SERVICE_URL": "localhost:50051",
+        "CACHE_SERVICE_URL": "localhost:50053"
+      }
+    }
+  }
+}

@@ -1,0 +1,15 @@
+{
+  "projectName": "monitoring",
+  "projectPath": "/Users/chuongle/web/monitoring",
+  "version": "0.1.0",
+  "createdAt": "2025-12-04T08:21:49.145Z",
+  "neo4j": {
+    "uri": "bolt://localhost:7687",
+    "username": "neo4j",
+    "password": "${NEO4J_PASSWORD}"
+  },
+  "grpc": {
+    "graphServiceUrl": "localhost:50051",
+    "cacheServiceUrl": "localhost:50053"
+  }
+}
