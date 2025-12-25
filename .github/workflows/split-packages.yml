@@ -1,0 +1,66 @@
+name: Split Packages
+
+on:
+  push:
+    tags:
+      - 'laravel-v*'
+      - 'python-v*'
+      - 'nodejs-v*'
+  workflow_dispatch:
+    inputs:
+      package:
+        description: 'Package to split (laravel, python, nodejs)'
+        required: true
+        default: 'laravel'
+      version:
+        description: 'Version tag (e.g., v1.0.0)'
+        required: true
+
+jobs:
+  split-laravel:
+    if: startsWith(github.ref, 'refs/tags/laravel-v') || (github.event_name == 'workflow_dispatch' && github.event.inputs.package == 'laravel')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version
+        id: version
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "version=${{ github.event.inputs.version }}" >> $GITHUB_OUTPUT
+          else
+            echo "version=${GITHUB_REF#refs/tags/laravel-}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Split Laravel package
+        uses: splitsh/lite-action@v2.0
+        with:
+          source: packages/laravel
+          target: refs/heads/laravel-split
+
+      - name: Push to Laravel Observatory repo
+        env:
+          GITHUB_TOKEN: ${{ secrets.PACKAGE_GITHUB_TOKEN }}
+        run: |
+          git remote add laravel-remote https://x-access-token:${GITHUB_TOKEN}@github.com/junixlabs/laravel-observatory.git || true
+          git push laravel-remote laravel-split:main --force
+          git push laravel-remote ${{ steps.version.outputs.version }} --force || git tag ${{ steps.version.outputs.version }} laravel-split && git push laravel-remote ${{ steps.version.outputs.version }}
+
+  # Future: split-python job
+  # split-python:
+  #   if: startsWith(github.ref, 'refs/tags/python-v') || (github.event_name == 'workflow_dispatch' && github.event.inputs.package == 'python')
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Split Python package
+  #       ...
+
+  # Future: split-nodejs job
+  # split-nodejs:
+  #   if: startsWith(github.ref, 'refs/tags/nodejs-v') || (github.event_name == 'workflow_dispatch' && github.event.inputs.package == 'nodejs')
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - name: Split Node.js package
+  #       ...
