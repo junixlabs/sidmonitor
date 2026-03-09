@@ -1,6 +1,24 @@
 version: '3.8'
 
 services:
+  postgres:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=sidmonitor
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-password}
+      - POSTGRES_DB=sidmonitor
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - monitoring
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sidmonitor -d sidmonitor"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   frontend:
     build:
       context: ./frontend
@@ -21,16 +39,21 @@ services:
     ports:
       - "8000:8000"
     depends_on:
-      - clickhouse
+      postgres:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
     environment:
       - HOST=0.0.0.0
       - PORT=8000
       - DEBUG=false
+      - DATABASE_URL=postgresql+asyncpg://sidmonitor:${POSTGRES_PASSWORD:-password}@postgres:5432/sidmonitor
       - CLICKHOUSE_HOST=clickhouse
       - CLICKHOUSE_PORT=8123
       - CLICKHOUSE_DATABASE=sid_monitoring
       - CLICKHOUSE_USER=default
       - CLICKHOUSE_PASSWORD=${CLICKHOUSE_PASSWORD:-}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-change-this-in-production}
       - AUTH_USERNAME=${AUTH_USERNAME:-admin}
       - AUTH_PASSWORD=${AUTH_PASSWORD:-changeme}
       - CORS_ORIGINS=http://localhost:3000
@@ -58,6 +81,7 @@ services:
       retries: 5
 
 volumes:
+  postgres_data:
   clickhouse_data:
 
 networks:
