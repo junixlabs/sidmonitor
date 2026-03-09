@@ -1,0 +1,73 @@
+# Dependencies
+node_modules/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+vendor/
+
+# Build outputs
+dist/
+build/
+*.egg-info/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+backend/.env
+backend/.env.test
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Test coverage
+.coverage
+htmlcov/
+.pytest_cache/
+
+# Docker
+*.tar
+
+# ClickHouse local data
+clickhouse_data/
+data/
+metadata/
+store/
+preprocessed_configs/
+
+# Local databases
+*.db
+backend/data/
+
+# Claude Code / AI tools
+.claude/
+.mcp.json
+.worktrees/
+CLAUDE.md
+
+# SidStack workspace data
+.sidstack/
+
+# Screenshots (dev review)
+*.png
+screenshots/
+
+# Archive files
+*.zip
+
+# Misc local/generated
+qa-test-results/
+openspec/
+uv.lock
