@@ -2,6 +2,129 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ============================================
+   Theme System - CSS Custom Properties
+   ============================================ */
+
+/* Light Theme (Default) */
+:root {
+  /* Background */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F9FAFB;
+  --bg-tertiary: #F3F4F6;
+
+  /* Text */
+  --text-primary: #111827;
+  --text-secondary: #6B7280;
+  --text-muted: #9CA3AF;
+
+  /* Borders */
+  --border-primary: #E5E7EB;
+  --border-subtle: #F3F4F6;
+
+  /* Accent */
+  --accent-primary: #4F46E5;
+  --accent-hover: #4338CA;
+
+  /* Status Colors */
+  --status-success: #10B981;
+  --status-warning: #F59E0B;
+  --status-error: #EF4444;
+  --status-info: #3B82F6;
+
+  /* Sidebar */
+  --sidebar-bg: #1F2937;
+  --sidebar-text: #F9FAFB;
+  --sidebar-text-muted: #9CA3AF;
+  --sidebar-hover: #374151;
+  --sidebar-active: #4F46E5;
+}
+
+/* Dark Theme */
+.dark {
+  /* Background */
+  --bg-primary: #0F172A;
+  --bg-secondary: #1E293B;
+  --bg-tertiary: #334155;
+
+  /* Text */
+  --text-primary: #F8FAFC;
+  --text-secondary: #CBD5E1;
+  --text-muted: #94A3B8;
+
+  /* Borders */
+  --border-primary: #334155;
+  --border-subtle: #1E293B;
+
+  /* Accent */
+  --accent-primary: #818CF8;
+  --accent-hover: #A5B4FC;
+
+  /* Status Colors (enhanced contrast for dark) */
+  --status-success: #34D399;
+  --status-warning: #FBBF24;
+  --status-error: #F87171;
+  --status-info: #60A5FA;
+
+  /* Sidebar */
+  --sidebar-bg: #0F172A;
+  --sidebar-text: #F8FAFC;
+  --sidebar-text-muted: #94A3B8;
+  --sidebar-hover: #1E293B;
+  --sidebar-active: #818CF8;
+}
+
+/* System preference fallback */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --bg-primary: #0F172A;
+    --bg-secondary: #1E293B;
+    --bg-tertiary: #334155;
+    --text-primary: #F8FAFC;
+    --text-secondary: #CBD5E1;
+    --text-muted: #94A3B8;
+    --border-primary: #334155;
+    --border-subtle: #1E293B;
+    --accent-primary: #818CF8;
+    --accent-hover: #A5B4FC;
+    --status-success: #34D399;
+    --status-warning: #FBBF24;
+    --status-error: #F87171;
+    --status-info: #60A5FA;
+    --sidebar-bg: #0F172A;
+    --sidebar-text: #F8FAFC;
+    --sidebar-text-muted: #94A3B8;
+    --sidebar-hover: #1E293B;
+    --sidebar-active: #818CF8;
+  }
+}
+
+/* ============================================
+   Base Styles
+   ============================================ */
+
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background-color: var(--bg-secondary);
+  color: var(--text-primary);
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+/* Scrollbar styling for dark mode */
+.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+.dark ::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: var(--border-primary);
+  border-radius: 4px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
