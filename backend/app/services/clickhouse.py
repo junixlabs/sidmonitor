@@ -43,7 +43,7 @@ def init_database():
         ) ENGINE = MergeTree()
         PARTITION BY toYYYYMM(timestamp)
         ORDER BY (timestamp, endpoint, request_id)
-        TTL timestamp + toIntervalDay(90)
+        TTL toDateTime(timestamp) + toIntervalDay(90)
         SETTINGS index_granularity = 8192
     """)
 
@@ -74,7 +74,7 @@ def init_database():
         ) ENGINE = MergeTree()
         PARTITION BY toYYYYMM(timestamp)
         ORDER BY (project_id, timestamp, queue_name, job_class, job_id)
-        TTL timestamp + INTERVAL 90 DAY
+        TTL toDateTime(timestamp) + INTERVAL 90 DAY
         SETTINGS index_granularity = 8192
     """)
 
@@ -105,7 +105,7 @@ def init_database():
         ) ENGINE = MergeTree()
         PARTITION BY toYYYYMM(timestamp)
         ORDER BY (project_id, timestamp, command, task_id)
-        TTL timestamp + INTERVAL 90 DAY
+        TTL toDateTime(timestamp) + INTERVAL 90 DAY
         SETTINGS index_granularity = 8192
     """)
 

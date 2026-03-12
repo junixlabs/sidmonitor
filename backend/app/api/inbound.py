@@ -8,84 +8,20 @@ import math
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, Query
-from pydantic import BaseModel
 
 from app.api.auth import verify_auth
+from app.models.inbound import (
+    InboundEndpointStats,
+    InboundLogDetail,
+    InboundLogResponse,
+    InboundModuleStats,
+    InboundOverallStats,
+    InboundPaginatedResponse,
+)
 from app.services.clickhouse import get_clickhouse_client
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-
-# ============================================
-# Response Models
-# ============================================
-
-class InboundLogResponse(BaseModel):
-    """Inbound log entry for query responses."""
-    id: str
-    request_id: str
-    timestamp: str
-    endpoint: str
-    method: str
-    status_code: int
-    response_time_ms: float
-    user_id: Optional[str]
-    user_name: Optional[str]
-    module: Optional[str]
-    tags: List[str]
-
-
-class InboundLogDetail(InboundLogResponse):
-    """Detailed inbound log entry including request/response body."""
-    request_body: Optional[str]
-    response_body: Optional[str]
-
-
-class InboundPaginatedResponse(BaseModel):
-    """Paginated response for inbound logs."""
-    data: List[InboundLogResponse]
-    total: int
-    page: int
-    page_size: int
-    total_pages: int
-
-
-class InboundOverallStats(BaseModel):
-    """Overall inbound statistics."""
-    total_requests: int
-    success_count: int
-    error_count: int
-    success_rate: float
-    avg_response_time_ms: float
-    p95_response_time_ms: float
-    modules_count: int
-
-
-class InboundModuleStats(BaseModel):
-    """Statistics for a specific module."""
-    module: str
-    total_requests: int
-    success_count: int
-    error_count: int
-    success_rate: float
-    error_rate: float
-    avg_response_time_ms: float
-    p95_response_time_ms: float
-
-
-class InboundEndpointStats(BaseModel):
-    """Statistics for a specific endpoint of a module."""
-    endpoint_pattern: str
-    method: str
-    total_requests: int
-    success_count: int
-    error_count: int
-    success_rate: float
-    error_rate: float
-    avg_response_time_ms: float
-    p95_response_time_ms: float
-    p99_response_time_ms: float
 
 
 # ============================================
@@ -494,9 +430,9 @@ async def get_inbound_logs(
 # IMPORTANT: Specific routes MUST be defined BEFORE parameterized routes
 # Otherwise FastAPI will match "/modules" or "/endpoints" as a log_id value
 
-@router.get("/logs/inbound/modules")
+@router.get("/logs/inbound/modules", response_model=List[str], summary="List inbound modules")
 async def get_inbound_modules(
-    project_id: Optional[str] = Query(None),
+    project_id: Optional[str] = Query(None, description="Filter by project ID (UUID)"),
     _: bool = Depends(verify_auth),
 ):
     """Get list of all distinct modules from inbound logs."""
@@ -525,10 +461,10 @@ async def get_inbound_modules(
         return []
 
 
-@router.get("/logs/inbound/endpoints")
+@router.get("/logs/inbound/endpoints", response_model=List[str], summary="List inbound endpoints")
 async def get_inbound_endpoints(
-    project_id: Optional[str] = Query(None),
-    module: Optional[str] = Query(None, description="Filter by module"),
+    project_id: Optional[str] = Query(None, description="Filter by project ID (UUID)"),
+    module: Optional[str] = Query(None, description="Filter by module name"),
     _: bool = Depends(verify_auth),
 ):
     """Get list of all distinct endpoints from inbound logs."""

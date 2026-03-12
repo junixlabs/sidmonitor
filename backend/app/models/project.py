@@ -24,14 +24,14 @@ class ProjectUpdate(BaseModel):
 
 class ProjectResponse(BaseModel):
     """Schema for project response."""
-    id: uuid.UUID
-    name: str
-    slug: str
-    platform: str
-    environment: str
-    dsn: str
-    created_at: datetime
-    created_by: uuid.UUID
+    id: uuid.UUID = Field(..., description="Project UUID")
+    name: str = Field(..., description="Project name")
+    slug: str = Field(..., description="URL-friendly project slug")
+    platform: str = Field(..., description="Platform (laravel, node, python, etc.)")
+    environment: str = Field(..., description="Environment (production, staging, development)")
+    dsn: str = Field(..., description="Data Source Name for SDK configuration")
+    created_at: datetime = Field(..., description="Project creation timestamp")
+    created_by: uuid.UUID = Field(..., description="UUID of the user who created the project")
 
     class Config:
         from_attributes = True
@@ -39,7 +39,7 @@ class ProjectResponse(BaseModel):
 
 class ProjectListResponse(BaseModel):
     """Schema for project list response."""
-    projects: List[ProjectResponse]
+    projects: List[ProjectResponse] = Field(..., description="List of projects in the organization")
 
 
 class ApiKeyCreate(BaseModel):
@@ -50,12 +50,12 @@ class ApiKeyCreate(BaseModel):
 
 class ApiKeyResponse(BaseModel):
     """Schema for API key response (without full key)."""
-    id: uuid.UUID
-    name: str
-    key_prefix: str
-    scopes: List[str]
-    created_at: datetime
-    last_used_at: Optional[datetime] = None
+    id: uuid.UUID = Field(..., description="API key UUID")
+    name: str = Field(..., description="API key name/description")
+    key_prefix: str = Field(..., description="First characters of the API key for identification")
+    scopes: List[str] = Field(..., description="API key permission scopes")
+    created_at: datetime = Field(..., description="API key creation timestamp")
+    last_used_at: Optional[datetime] = Field(None, description="Last time the API key was used")
 
     class Config:
         from_attributes = True
@@ -63,13 +63,13 @@ class ApiKeyResponse(BaseModel):
 
 class ApiKeyCreatedResponse(BaseModel):
     """Schema for API key creation response (includes full key - only shown once!)."""
-    id: uuid.UUID
-    name: str
-    key_prefix: str
-    key: str  # Full API key - only shown on creation!
-    scopes: List[str]
-    created_at: datetime
-    last_used_at: Optional[datetime] = None
+    id: uuid.UUID = Field(..., description="API key UUID")
+    name: str = Field(..., description="API key name/description")
+    key_prefix: str = Field(..., description="First characters of the API key for identification")
+    key: str = Field(..., description="Full API key value (only shown once on creation)")
+    scopes: List[str] = Field(..., description="API key permission scopes")
+    created_at: datetime = Field(..., description="API key creation timestamp")
+    last_used_at: Optional[datetime] = Field(None, description="Last time the API key was used")
 
     class Config:
         from_attributes = True
@@ -77,9 +77,9 @@ class ApiKeyCreatedResponse(BaseModel):
 
 class ApiKeyListResponse(BaseModel):
     """Schema for API key list response."""
-    api_keys: List[ApiKeyResponse]
+    api_keys: List[ApiKeyResponse] = Field(..., description="List of API keys for the project")
 
 
 class DsnResponse(BaseModel):
     """Schema for DSN response."""
-    dsn: str
+    dsn: str = Field(..., description="Data Source Name URL for SDK configuration")

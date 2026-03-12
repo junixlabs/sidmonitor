@@ -3,7 +3,7 @@
 from typing import List, Optional
 
 from fastapi import APIRouter, Depends, HTTPException, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 from app.api.auth import verify_auth
 from app.config import get_settings
@@ -14,48 +14,48 @@ router = APIRouter()
 
 class ProjectSettings(BaseModel):
     """Project settings response model."""
-    project_name: str
-    dsn_host: str
-    dsn_endpoint: str
-    api_key_count: int
-    api_key_preview: Optional[str] = None
+    project_name: str = Field(..., description="Project display name")
+    dsn_host: str = Field(..., description="DSN host for SDK configuration")
+    dsn_endpoint: str = Field(..., description="DSN ingest endpoint path")
+    api_key_count: int = Field(..., description="Number of active API keys")
+    api_key_preview: Optional[str] = Field(None, description="Preview of the first API key (prefix only)")
 
 
 class DSNInfo(BaseModel):
     """DSN information for client SDKs."""
-    format: str
-    example: str
-    host: str
-    endpoint: str
-    has_api_key: bool
+    format: str = Field(..., description="DSN URL format template")
+    example: str = Field(..., description="Example DSN URL")
+    host: str = Field(..., description="API host address")
+    endpoint: str = Field(..., description="Ingest endpoint path")
+    has_api_key: bool = Field(..., description="Whether at least one API key is configured")
 
 
 class ApiKeyResponse(BaseModel):
     """API key response model (without full key)."""
-    id: str
-    name: str
-    prefix: str
-    created_at: str
-    last_used_at: Optional[str] = None
+    id: str = Field(..., description="API key identifier")
+    name: str = Field(..., description="API key name/description")
+    prefix: str = Field(..., description="First characters of the API key")
+    created_at: str = Field(..., description="Creation timestamp (ISO format)")
+    last_used_at: Optional[str] = Field(None, description="Last usage timestamp (ISO format)")
 
 
 class ApiKeyCreateRequest(BaseModel):
     """Request model for creating an API key."""
-    name: str
+    name: str = Field(..., description="Name/description for the new API key")
 
 
 class ApiKeyCreateResponse(BaseModel):
     """Response model for newly created API key (includes full key once)."""
-    id: str
-    name: str
-    key: str
-    prefix: str
-    created_at: str
+    id: str = Field(..., description="API key identifier")
+    name: str = Field(..., description="API key name/description")
+    key: str = Field(..., description="Full API key value (only shown once)")
+    prefix: str = Field(..., description="First characters of the API key")
+    created_at: str = Field(..., description="Creation timestamp (ISO format)")
 
 
 class ApiKeyListResponse(BaseModel):
     """Response model for list of API keys."""
-    api_keys: List[ApiKeyResponse]
+    api_keys: List[ApiKeyResponse] = Field(..., description="List of API keys")
 
 
 @router.get("/settings/project", response_model=ProjectSettings)

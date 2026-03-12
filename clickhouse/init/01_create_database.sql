@@ -23,7 +23,7 @@ CREATE TABLE IF NOT EXISTS sid_monitoring.logs (
 ) ENGINE = MergeTree()
 ORDER BY (timestamp, request_id)
 PARTITION BY toYYYYMM(timestamp)
-TTL timestamp + INTERVAL 90 DAY;
+TTL toDateTime(timestamp) + INTERVAL 90 DAY;
 
 -- Create materialized view for statistics
 CREATE TABLE IF NOT EXISTS sid_monitoring.stats_hourly (

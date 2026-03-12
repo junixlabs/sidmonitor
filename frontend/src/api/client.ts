@@ -11,7 +11,11 @@ import type {
   ModuleHealth,
   TimeSeriesParams,
   User,
+  UserUpdate,
   Organization,
+  OrganizationMember,
+  InviteMemberRequest,
+  MemberRoleUpdate,
   Project,
   ProjectApiKey,
   AuthResponse,
@@ -23,6 +27,7 @@ import type {
   TabCounts,
   JobLog,
   JobStats,
+  JobTimelinePoint,
   JobFilterParams,
   ScheduledTaskLog,
   ScheduledTaskStats,
@@ -42,16 +47,19 @@ import type {
   UserActivityPoint,
   UserWithErrors,
   OutboundLog,
+  OutboundLogDetail,
   OutboundLogFilterParams,
   OutboundStats,
   OutboundServiceHealth,
   OutboundHostHealth,
   OutboundEndpointStats,
   InboundLog,
+  InboundLogDetail,
   InboundLogFilterParams,
   InboundStats,
   InboundModuleHealth,
   InboundEndpointStats,
+  DsnResponse,
 } from '../types'
 
 const api = axios.create({
@@ -113,6 +121,11 @@ export const authApi = {
     return response.data
   },
 
+  updateMe: async (data: UserUpdate): Promise<User> => {
+    const response = await api.patch('/auth/me', data)
+    return response.data
+  },
+
   logout: async (): Promise<void> => {
     await api.post('/auth/logout')
   },
@@ -142,6 +155,26 @@ export const orgApi = {
 
   delete: async (slug: string): Promise<void> => {
     await api.delete(`/organizations/${slug}`)
+  },
+
+  // Member management
+  listMembers: async (slug: string): Promise<OrganizationMember[]> => {
+    const response = await api.get(`/organizations/${slug}/members`)
+    return response.data
+  },
+
+  inviteMember: async (slug: string, data: InviteMemberRequest): Promise<OrganizationMember> => {
+    const response = await api.post(`/organizations/${slug}/members`, data)
+    return response.data
+  },
+
+  updateMember: async (slug: string, memberId: string, data: MemberRoleUpdate): Promise<OrganizationMember> => {
+    const response = await api.patch(`/organizations/${slug}/members/${memberId}`, data)
+    return response.data
+  },
+
+  removeMember: async (slug: string, memberId: string): Promise<void> => {
+    await api.delete(`/organizations/${slug}/members/${memberId}`)
   },
 }
 
@@ -184,6 +217,11 @@ export const projectApi = {
 
   revokeApiKey: async (projectSlug: string, keyId: string): Promise<void> => {
     await api.delete(`/projects/${projectSlug}/api-keys/${keyId}`)
+  },
+
+  getDsn: async (projectSlug: string): Promise<DsnResponse> => {
+    const response = await api.get(`/projects/${projectSlug}/dsn`)
+    return response.data
   },
 }
 
@@ -308,6 +346,11 @@ export const jobApi = {
     return response.data
   },
 
+  getJobTimeline: async (projectId: string, timeframe = '24h', interval = 'hour'): Promise<JobTimelinePoint[]> => {
+    const response = await api.get('/v1/jobs/timeline', { params: { project_id: projectId, timeframe, interval } })
+    return response.data
+  },
+
   getScheduledTasks: async (params: ScheduledTaskFilterParams): Promise<PaginatedResponse<ScheduledTaskLog>> => {
     const response = await api.get('/v1/scheduled-tasks', { params })
     return response.data
@@ -379,7 +422,7 @@ export const outboundApi = {
     return response.data
   },
 
-  getLog: async (id: string): Promise<OutboundLog> => {
+  getLog: async (id: string): Promise<OutboundLogDetail> => {
     const response = await api.get(`/logs/outbound/${id}`)
     return response.data
   },
@@ -422,8 +465,13 @@ export const inboundApi = {
     return response.data
   },
 
-  getLog: async (id: string): Promise<InboundLog> => {
+  getLog: async (id: string): Promise<InboundLogDetail> => {
     const response = await api.get(`/logs/inbound/${id}`)
+    return response.data
+  },
+
+  getEndpoints: async (projectId?: string): Promise<string[]> => {
+    const response = await api.get('/logs/inbound/endpoints', { params: { project_id: projectId } })
     return response.data
   },
 

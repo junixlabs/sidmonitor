@@ -56,7 +56,7 @@ CREATE TABLE IF NOT EXISTS sid_monitoring.outbound_logs (
 ) ENGINE = MergeTree()
 PARTITION BY toYYYYMM(timestamp)
 ORDER BY (project_id, timestamp, service_name, request_id)
-TTL timestamp + INTERVAL 90 DAY
+TTL toDateTime(timestamp) + INTERVAL 90 DAY
 SETTINGS index_granularity = 8192;
 
 -- Indexes for outbound_logs

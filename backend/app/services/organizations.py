@@ -217,7 +217,7 @@ async def check_organization_permission(
     }
 
     user_role_level = role_hierarchy.get(membership.role, 0)
-    required_role_level = role_hierarchy.get(required_role.value, 0)
+    required_role_level = role_hierarchy.get(required_role.value if hasattr(required_role, 'value') else required_role, 0)
 
     return user_role_level >= required_role_level
 
@@ -287,7 +287,7 @@ async def add_member(
     membership = OrganizationMember(
         organization_id=organization_id,
         user_id=user_id,
-        role=role.value,
+        role=role.value if hasattr(role, 'value') else role,
         joined_at=datetime.utcnow(),
     )
 
@@ -353,7 +353,7 @@ async def update_member_role(
                 detail="Insufficient permissions to perform this action",
             )
 
-    membership.role = new_role.value
+    membership.role = new_role.value if hasattr(new_role, 'value') else new_role
 
     await db.commit()
     await db.refresh(membership)

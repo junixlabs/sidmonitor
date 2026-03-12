@@ -241,8 +241,8 @@ export default function Dashboard() {
                   <div className="text-xs text-text-muted">Total</div>
                 </div>
                 <div className="text-center p-2 bg-surface-secondary rounded">
-                  <div className={`text-lg font-semibold ${(100 - (outboundStats?.error_rate ?? 0)) >= 95 ? 'text-status-success' : (100 - (outboundStats?.error_rate ?? 0)) >= 90 ? 'text-status-warning' : 'text-status-danger'}`}>
-                    {formatPercentage(100 - (outboundStats?.error_rate ?? 0))}
+                  <div className={`text-lg font-semibold ${(outboundStats?.success_rate ?? 100) >= 95 ? 'text-status-success' : (outboundStats?.success_rate ?? 100) >= 90 ? 'text-status-warning' : 'text-status-danger'}`}>
+                    {formatPercentage(outboundStats?.success_rate ?? 0)}
                   </div>
                   <div className="text-xs text-text-muted">Success</div>
                 </div>
@@ -318,7 +318,7 @@ export default function Dashboard() {
                     <div key={idx} className="flex items-center justify-between py-1 text-sm">
                       <div className="flex items-center gap-2">
                         <span className="w-2 h-2 rounded-full bg-status-danger" />
-                        <span className="text-text-secondary truncate max-w-[100px]">{job.job_name || job.job_class}</span>
+                        <span className="text-text-secondary truncate max-w-[100px]">{job.job_class}</span>
                       </div>
                       <span className="text-xs text-text-muted">
                         {new Date(job.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}

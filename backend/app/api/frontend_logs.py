@@ -1,11 +1,15 @@
-"""Frontend error logging endpoint - logs to file for debugging"""
+"""Frontend error logging endpoint - logs to file for debugging."""
 import json
 import os
 from datetime import datetime
-from typing import Optional
+from fastapi import APIRouter, Query
 
-from fastapi import APIRouter
-from pydantic import BaseModel
+from app.models.frontend_logs import (
+    FrontendLogEntry,
+    FrontendLogResponse,
+    FrontendLogsListResponse,
+    FrontendLogsClearResponse,
+)
 
 router = APIRouter()
 
@@ -14,19 +18,9 @@ LOG_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'data')
 LOG_FILE = os.path.join(LOG_DIR, 'frontend-errors.log')
 
 
-class FrontendLogEntry(BaseModel):
-    timestamp: str
-    type: str  # error, warning, navigation, api, render
-    message: str
-    stack: Optional[str] = None
-    url: Optional[str] = None
-    component: Optional[str] = None
-    metadata: Optional[dict] = None
-
-
-@router.post("/v1/frontend-logs")
+@router.post("/v1/frontend-logs", response_model=FrontendLogResponse, summary="Log frontend error")
 async def log_frontend_error(entry: FrontendLogEntry):
-    """Log frontend errors to file for debugging"""
+    """Log a frontend error or event to file for debugging."""
     # Ensure log directory exists
     os.makedirs(LOG_DIR, exist_ok=True)
 
@@ -40,14 +34,16 @@ async def log_frontend_error(entry: FrontendLogEntry):
     with open(LOG_FILE, 'a') as f:
         f.write(json.dumps(log_line) + '\n')
 
-    return {"status": "logged"}
+    return FrontendLogResponse(status="logged")
 
 
-@router.get("/v1/frontend-logs")
-async def get_frontend_logs(limit: int = 100):
-    """Get recent frontend logs"""
+@router.get("/v1/frontend-logs", response_model=FrontendLogsListResponse, summary="Get frontend logs")
+async def get_frontend_logs(
+    limit: int = Query(100, ge=1, le=1000, description="Maximum number of log entries to return"),
+):
+    """Get recent frontend logs, ordered by time (most recent last)."""
     if not os.path.exists(LOG_FILE):
-        return {"logs": []}
+        return FrontendLogsListResponse(logs=[])
 
     logs = []
     with open(LOG_FILE, 'r') as f:
@@ -59,12 +55,12 @@ async def get_frontend_logs(limit: int = 100):
                     pass
 
     # Return last N logs
-    return {"logs": logs[-limit:]}
+    return FrontendLogsListResponse(logs=logs[-limit:])
 
 
-@router.delete("/v1/frontend-logs")
+@router.delete("/v1/frontend-logs", response_model=FrontendLogsClearResponse, summary="Clear frontend logs")
 async def clear_frontend_logs():
-    """Clear frontend logs"""
+    """Clear all stored frontend logs."""
     if os.path.exists(LOG_FILE):
         os.remove(LOG_FILE)
-    return {"status": "cleared"}
+    return FrontendLogsClearResponse(status="cleared")

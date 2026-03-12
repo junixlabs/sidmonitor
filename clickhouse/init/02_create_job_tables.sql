@@ -26,7 +26,7 @@ CREATE TABLE IF NOT EXISTS sid_monitoring.job_logs (
 ) ENGINE = MergeTree()
 ORDER BY (started_at, job_id)
 PARTITION BY toYYYYMM(started_at)
-TTL started_at + INTERVAL 90 DAY;
+TTL toDateTime(started_at) + INTERVAL 90 DAY;
 
 -- Create scheduled_task_logs table for storing Laravel scheduled task executions
 CREATE TABLE IF NOT EXISTS sid_monitoring.scheduled_task_logs (
@@ -55,7 +55,7 @@ CREATE TABLE IF NOT EXISTS sid_monitoring.scheduled_task_logs (
 ) ENGINE = MergeTree()
 ORDER BY (scheduled_at, task_id)
 PARTITION BY toYYYYMM(scheduled_at)
-TTL scheduled_at + INTERVAL 90 DAY;
+TTL toDateTime(scheduled_at) + INTERVAL 90 DAY;
 
 -- Indexes for job_logs
 CREATE INDEX IF NOT EXISTS idx_job_status ON sid_monitoring.job_logs (status) TYPE minmax GRANULARITY 1;

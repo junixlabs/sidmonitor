@@ -138,15 +138,15 @@ def _build_scheduled_task_row(entry: ScheduledTaskLogEntry, project_id: str) -> 
         entry.scheduled_at,
         entry.started_at,
         entry.completed_at,
-        entry.duration_ms,
-        entry.exit_code,
+        int(entry.duration_ms or 0),
+        int(entry.exit_code or 0),
         entry.output or '',
         entry.error_message or '',
         entry.error_trace or '',
         1 if entry.without_overlapping else 0,
         entry.mutex_name or '',
         entry.expected_run_time,
-        entry.delay_ms,
+        int(entry.delay_ms or 0),
         str(entry.metadata) if entry.metadata else '{}',
     ]
 

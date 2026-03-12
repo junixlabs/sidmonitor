@@ -110,6 +110,10 @@ export interface DSNInfo {
   has_api_key: boolean
 }
 
+export interface DsnResponse {
+  dsn: string
+}
+
 export interface ApiKey {
   id: string
   name: string
@@ -151,10 +155,19 @@ export interface Organization {
 export interface OrganizationMember {
   id: string
   user_id: string
+  user_email: string
+  user_name: string
   role: 'owner' | 'admin' | 'member'
-  user?: User
-  invited_at: string
   joined_at?: string
+}
+
+export interface InviteMemberRequest {
+  email: string
+  role: 'owner' | 'admin' | 'member'
+}
+
+export interface MemberRoleUpdate {
+  role: 'owner' | 'admin' | 'member'
 }
 
 export interface Project {
@@ -193,6 +206,11 @@ export interface RegisterData {
   email: string
   password: string
   name: string
+}
+
+export interface UserUpdate {
+  name?: string
+  avatar_url?: string
 }
 
 // Dashboard tab types
@@ -246,17 +264,40 @@ export interface JobClassHealth {
   avg_duration_ms: number
 }
 
+export interface RecentFailure {
+  job_id: string
+  job_class: string
+  timestamp: string
+  exception_message: string
+}
+
 export interface JobStats {
   total_executions: number
   success_count: number
   failure_count: number
   retrying_count: number
+  pending_count: number
+  cancelled_count: number
+  timeout_count: number
   success_rate: number
   avg_duration_ms: number
+  p50_duration_ms: number
   p95_duration_ms: number
+  p99_duration_ms: number
   by_queue: QueueHealth[]
   by_job_class: JobClassHealth[]
-  recent_failures: JobLog[]
+  recent_failures: RecentFailure[]
+}
+
+export interface JobTimelinePoint {
+  timestamp: string
+  total: number
+  success: number
+  failed: number
+  retrying: number
+  pending: number
+  cancelled: number
+  timeout: number
 }
 
 export interface JobFilterParams {
@@ -498,19 +539,34 @@ export interface UserWithErrors {
 export interface OutboundLog {
   id: string
   project_id: string
+  request_id: string
+  parent_request_id: string
   trace_id: string
   span_id: string
-  parent_span_id?: string
+  timestamp: string
   service_name: string
-  target_url: string
   target_host: string
+  target_url: string
   method: string
   status_code: number
   latency_ms: number
+  is_success: boolean
   request_size: number
   response_size: number
-  error_message?: string
-  timestamp: string
+  error_message: string
+  error_code: string
+  retry_count: number
+  module: string
+  user_id: string
+  tags: string[]
+}
+
+export interface OutboundLogDetail extends OutboundLog {
+  request_headers: string
+  response_headers: string
+  request_body: string
+  response_body: string
+  metadata: string
 }
 
 export interface OutboundLogFilterParams {
@@ -528,11 +584,14 @@ export interface OutboundLogFilterParams {
 
 export interface OutboundStats {
   total_requests: number
-  error_rate: number
+  success_count: number
+  failure_count: number
+  success_rate: number
   avg_latency_ms: number
   p95_latency_ms: number
-  by_service: OutboundServiceHealth[]
-  by_host: OutboundHostHealth[]
+  services_count: number
+  timeout_count: number
+  total_retries: number
 }
 
 export interface OutboundServiceHealth {
@@ -571,17 +630,21 @@ export interface OutboundEndpointStats {
 // Inbound API Monitoring types
 export interface InboundLog {
   id: string
-  project_id: string
   request_id: string
   timestamp: string
-  module: string
   endpoint: string
   method: string
   status_code: number
   response_time_ms: number
   user_id?: string
   user_name?: string
-  tags?: string[]
+  module?: string
+  tags: string[]
+}
+
+export interface InboundLogDetail extends InboundLog {
+  request_body?: string
+  response_body?: string
 }
 
 export interface InboundLogFilterParams {

@@ -7,7 +7,7 @@ from pydantic import BaseModel, Field
 class InboundLogEntry(BaseModel):
     """Log entry for inbound HTTP requests to the Laravel application."""
     request_id: str = Field(..., description="Unique request identifier")
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Request timestamp (defaults to current UTC time)")
     endpoint: str = Field(..., description="Request endpoint path")
     method: str = Field(..., description="HTTP method (GET, POST, etc.)")
     status_code: int = Field(..., ge=100, le=599, description="HTTP status code")
@@ -23,7 +23,7 @@ class InboundLogEntry(BaseModel):
 class OutboundLogEntry(BaseModel):
     """Log entry for outbound HTTP requests to third-party APIs."""
     request_id: str = Field(..., description="Unique request identifier")
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Request timestamp (defaults to current UTC time)")
     endpoint: str = Field(..., description="External API endpoint URL")
     method: str = Field(..., description="HTTP method (GET, POST, etc.)")
     status_code: int = Field(..., ge=100, le=599, description="HTTP status code")
@@ -45,9 +45,9 @@ class BatchIngestRequest(BaseModel):
 
 class IngestResponse(BaseModel):
     """Response for ingest operations."""
-    success: bool
-    message: str
-    ingested_count: int = 0
+    success: bool = Field(..., description="Whether the ingest operation succeeded")
+    message: str = Field(..., description="Status message describing the result")
+    ingested_count: int = Field(0, description="Number of log entries successfully ingested")
 
 
 # ============================================
@@ -63,7 +63,7 @@ class OutboundLogEntryNew(BaseModel):
     span_id: str = Field(default="", description="Span ID for distributed tracing")
 
     # Timing
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Request timestamp (defaults to current UTC time)")
 
     # Service info
     service_name: str = Field(..., description="Third-party service name")

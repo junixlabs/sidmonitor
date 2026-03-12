@@ -8,7 +8,7 @@ class OutboundLogEntry(BaseModel):
     """Log entry for outbound HTTP requests to third-party services."""
     # Required identifiers
     request_id: str = Field(..., description="Unique request identifier")
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Request timestamp (defaults to current UTC time)")
 
     # Service info
     service_name: str = Field(..., description="Name of the third-party service")
@@ -58,103 +58,103 @@ class BatchOutboundIngestRequest(BaseModel):
 
 class OutboundIngestResponse(BaseModel):
     """Response for outbound ingest operations."""
-    success: bool
-    message: str
-    ingested_count: int = 0
+    success: bool = Field(..., description="Whether the ingest operation succeeded")
+    message: str = Field(..., description="Human-readable result message")
+    ingested_count: int = Field(0, description="Number of log entries successfully ingested")
 
 
 # Query response models
 
 class OutboundLogResponse(BaseModel):
     """Outbound log entry for query responses."""
-    id: str
-    project_id: str
-    request_id: str
-    parent_request_id: str
-    trace_id: str
-    span_id: str
-    timestamp: str
-    service_name: str
-    target_host: str
-    target_url: str
-    method: str
-    status_code: int
-    latency_ms: float
-    is_success: bool
-    request_size: int
-    response_size: int
-    error_message: str
-    error_code: str
-    retry_count: int
-    module: str
-    user_id: str
-    tags: list[str]
+    id: str = Field(..., description="Unique log entry identifier")
+    project_id: str = Field(..., description="Project UUID that owns this log")
+    request_id: str = Field(..., description="Request correlation ID")
+    parent_request_id: str = Field(..., description="Parent inbound request ID for tracing")
+    trace_id: str = Field(..., description="Distributed trace ID")
+    span_id: str = Field(..., description="Span ID within the trace")
+    timestamp: str = Field(..., description="Request timestamp (YYYY-MM-DD HH:MM:SS)")
+    service_name: str = Field(..., description="Third-party service name")
+    target_host: str = Field(..., description="Target host/domain")
+    target_url: str = Field(..., description="Full target URL")
+    method: str = Field(..., description="HTTP method (GET, POST, etc.)")
+    status_code: int = Field(..., description="HTTP response status code")
+    latency_ms: float = Field(..., description="Response latency in milliseconds")
+    is_success: bool = Field(..., description="Whether the request was successful (2xx/3xx)")
+    request_size: int = Field(..., description="Request body size in bytes")
+    response_size: int = Field(..., description="Response body size in bytes")
+    error_message: str = Field(..., description="Error message if the request failed")
+    error_code: str = Field(..., description="Service-specific error code")
+    retry_count: int = Field(..., description="Number of retry attempts")
+    module: str = Field(..., description="Application module that made the request")
+    user_id: str = Field(..., description="User ID context")
+    tags: list[str] = Field(default_factory=list, description="Custom tags")
 
 
 class OutboundLogDetail(OutboundLogResponse):
     """Detailed outbound log entry including headers and body."""
-    request_headers: str
-    response_headers: str
-    request_body: str
-    response_body: str
-    metadata: str
+    request_headers: str = Field(..., description="Request headers as JSON string")
+    response_headers: str = Field(..., description="Response headers as JSON string")
+    request_body: str = Field(..., description="Request body content (may be truncated)")
+    response_body: str = Field(..., description="Response body content (may be truncated)")
+    metadata: str = Field(..., description="Additional metadata as JSON string")
 
 
 class OutboundPaginatedResponse(BaseModel):
     """Paginated response for outbound logs."""
-    data: list[OutboundLogResponse]
-    total: int
-    page: int
-    page_size: int
-    total_pages: int
+    data: list[OutboundLogResponse] = Field(..., description="List of outbound log entries")
+    total: int = Field(..., description="Total number of matching records")
+    page: int = Field(..., description="Current page number (1-based)")
+    page_size: int = Field(..., description="Number of records per page")
+    total_pages: int = Field(..., description="Total number of pages")
 
 
 class OutboundServiceStats(BaseModel):
-    """Statistics for a specific service."""
-    service_name: str
-    total_requests: int
-    success_count: int
-    failure_count: int
-    success_rate: float
-    avg_latency_ms: float
-    p95_latency_ms: float
-    error_rate: float
+    """Statistics for a specific third-party service."""
+    service_name: str = Field(..., description="Service name")
+    total_requests: int = Field(..., description="Total outbound requests to this service")
+    success_count: int = Field(..., description="Number of successful requests")
+    failure_count: int = Field(..., description="Number of failed requests")
+    success_rate: float = Field(..., description="Success rate percentage (0-100)")
+    avg_latency_ms: float = Field(..., description="Average response latency in milliseconds")
+    p95_latency_ms: float = Field(..., description="95th percentile latency in milliseconds")
+    error_rate: float = Field(..., description="Error rate percentage (0-100)")
 
 
 class OutboundHostStats(BaseModel):
-    """Statistics for a specific host."""
-    target_host: str
-    total_requests: int
-    success_count: int
-    failure_count: int
-    success_rate: float
-    avg_latency_ms: float
+    """Statistics for a specific target host."""
+    target_host: str = Field(..., description="Target host/domain")
+    total_requests: int = Field(..., description="Total requests to this host")
+    success_count: int = Field(..., description="Number of successful requests")
+    failure_count: int = Field(..., description="Number of failed requests")
+    success_rate: float = Field(..., description="Success rate percentage (0-100)")
+    avg_latency_ms: float = Field(..., description="Average response latency in milliseconds")
 
 
 class OutboundOverallStats(BaseModel):
-    """Overall outbound statistics."""
-    total_requests: int
-    success_count: int
-    failure_count: int
-    success_rate: float
-    avg_latency_ms: float
-    p95_latency_ms: float
-    services_count: int
-    timeout_count: int
-    total_retries: int
+    """Overall outbound statistics for a project."""
+    total_requests: int = Field(..., description="Total outbound requests")
+    success_count: int = Field(..., description="Number of successful requests")
+    failure_count: int = Field(..., description="Number of failed requests")
+    success_rate: float = Field(..., description="Success rate percentage (0-100)")
+    avg_latency_ms: float = Field(..., description="Average response latency in milliseconds")
+    p95_latency_ms: float = Field(..., description="95th percentile latency in milliseconds")
+    services_count: int = Field(..., description="Number of distinct external services called")
+    timeout_count: int = Field(..., description="Number of timeout errors (408/504)")
+    total_retries: int = Field(..., description="Total number of retry attempts across all requests")
 
 
 class OutboundEndpointStats(BaseModel):
-    """Statistics for a specific endpoint of a service."""
-    endpoint_pattern: str  # URL path pattern (grouped)
-    method: str  # HTTP method
-    total_requests: int
-    success_count: int
-    failure_count: int
-    success_rate: float
-    error_rate: float
-    avg_latency_ms: float
-    p95_latency_ms: float
-    p99_latency_ms: float
-    avg_request_size: float
-    avg_response_size: float
+    """Statistics for a specific endpoint of a service. Similar URLs are grouped by replacing numeric segments with {id}."""
+    endpoint_pattern: str = Field(..., description="Normalized URL path pattern (e.g., /users/{id})")
+    method: str = Field(..., description="HTTP method")
+    total_requests: int = Field(..., description="Total requests to this endpoint")
+    success_count: int = Field(..., description="Number of successful requests")
+    failure_count: int = Field(..., description="Number of failed requests")
+    success_rate: float = Field(..., description="Success rate percentage (0-100)")
+    error_rate: float = Field(..., description="Error rate percentage (0-100)")
+    avg_latency_ms: float = Field(..., description="Average response latency in milliseconds")
+    p95_latency_ms: float = Field(..., description="95th percentile latency in milliseconds")
+    p99_latency_ms: float = Field(..., description="99th percentile latency in milliseconds")
+    avg_request_size: float = Field(..., description="Average request body size in bytes")
+    avg_response_size: float = Field(..., description="Average response body size in bytes")

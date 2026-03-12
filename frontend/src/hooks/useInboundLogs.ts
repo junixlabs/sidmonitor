@@ -26,6 +26,17 @@ export function useInboundLog(id: string) {
   })
 }
 
+export function useInboundEndpoints() {
+  const projectId = useProjectId()
+
+  return useQuery({
+    queryKey: ['inboundEndpoints', projectId],
+    queryFn: () => inboundApi.getEndpoints(projectId),
+    enabled: !!projectId,
+    ...CACHE_CONFIG.stable,
+  })
+}
+
 export function useInboundModules() {
   const projectId = useProjectId()
 

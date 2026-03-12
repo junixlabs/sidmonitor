@@ -1,0 +1,92 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: sidmonitor
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: sidmonitor
+    volumes:
+      - postgres_preview:/var/lib/postgresql/data
+    networks:
+      - coolify
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sidmonitor -d sidmonitor"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:23.8
+    environment:
+      CLICKHOUSE_DB: sid_monitoring
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    volumes:
+      - clickhouse_preview:/var/lib/clickhouse
+      - ./clickhouse/init:/docker-entrypoint-initdb.d
+    networks:
+      - coolify
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8000
+      DEBUG: "false"
+      DATABASE_URL: postgresql+asyncpg://sidmonitor:password@postgres:5432/sidmonitor
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: 8123
+      CLICKHOUSE_DATABASE: sid_monitoring
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ""
+      JWT_SECRET_KEY: preview-secret-key
+      CORS_ORIGINS: "https://${PREVIEW_SLUG:-preview}.${BASE_DOMAIN:-preview.musetools.com}"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${PREVIEW_SLUG:-preview}-api.rule=Host(`${PREVIEW_SLUG:-preview}-api.${BASE_DOMAIN:-preview.musetools.com}`)"
+      - "traefik.http.routers.${PREVIEW_SLUG:-preview}-api.entrypoints=https"
+      - "traefik.http.routers.${PREVIEW_SLUG:-preview}-api.tls=true"
+      - "traefik.http.routers.${PREVIEW_SLUG:-preview}-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.${PREVIEW_SLUG:-preview}-api.loadbalancer.server.port=8000"
+    networks:
+      - coolify
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.preview
+      args:
+        VITE_API_URL: ""
+    depends_on:
+      - backend
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${PREVIEW_SLUG:-preview}.rule=Host(`${PREVIEW_SLUG:-preview}.${BASE_DOMAIN:-preview.musetools.com}`)"
+      - "traefik.http.routers.${PREVIEW_SLUG:-preview}.entrypoints=https"
+      - "traefik.http.routers.${PREVIEW_SLUG:-preview}.tls=true"
+      - "traefik.http.routers.${PREVIEW_SLUG:-preview}.tls.certresolver=letsencrypt"
+      - "traefik.http.services.${PREVIEW_SLUG:-preview}.loadbalancer.server.port=80"
+    networks:
+      - coolify
+    restart: unless-stopped
+
+volumes:
+  postgres_preview:
+  clickhouse_preview:
+
+networks:
+  coolify:
+    external: true

@@ -119,7 +119,7 @@ export default function OutboundAPIs() {
   const detailFields: DetailField[] = selectedLog ? [
     { label: 'Trace ID', value: <span className="font-mono break-all">{selectedLog.trace_id}</span> },
     { label: 'Span ID', value: <span className="font-mono">{selectedLog.span_id}</span> },
-    { label: 'Parent Span ID', value: selectedLog.parent_span_id, hidden: !selectedLog.parent_span_id },
+    { label: 'Parent Request ID', value: selectedLog.parent_request_id, hidden: !selectedLog.parent_request_id },
     { label: 'Timestamp', value: format(new Date(selectedLog.timestamp), 'PPpp') },
     { label: 'Service Name', value: selectedLog.service_name },
     { label: 'Method', value: selectedLog.method },

@@ -6,6 +6,17 @@ import { useProjectId } from './useProjectId'
 
 import type { JobFilterParams, ScheduledTaskFilterParams } from '@/types'
 
+export function useJobTimeline(timeframe = '24h', interval = 'hour') {
+  const projectId = useProjectId()
+
+  return useQuery({
+    queryKey: ['jobTimeline', projectId, timeframe, interval],
+    queryFn: () => jobApi.getJobTimeline(projectId!, timeframe, interval),
+    enabled: !!projectId,
+    ...CACHE_CONFIG.standard,
+  })
+}
+
 export function useJobs(params: Omit<JobFilterParams, 'project_id'>) {
   const projectId = useProjectId()
 
