@@ -7,8 +7,6 @@ and inserting them. Eliminates duplicate insert functions across api/ingest.py a
 import logging
 import uuid
 from typing import Optional
-from urllib.parse import urlparse
-
 from app.constants import (
     DEFAULT_PROJECT_ID,
     JOB_LOGS_COLUMNS,
@@ -20,7 +18,8 @@ from app.constants import (
     TABLE_OUTBOUND_LOGS,
     TABLE_SCHEDULED_TASK_LOGS,
 )
-from app.models.ingest import InboundLogEntry, OutboundLogEntry
+from app.models.ingest import InboundLogEntry
+from app.models.outbound import OutboundLogEntry
 from app.models.jobs import JobLogEntry, ScheduledTaskLogEntry
 from app.services.clickhouse import get_clickhouse_client
 
@@ -30,15 +29,6 @@ logger = logging.getLogger(__name__)
 def _get_project_id(project_id: Optional[uuid.UUID]) -> str:
     """Get project_id string, falling back to default for legacy keys."""
     return str(project_id) if project_id else DEFAULT_PROJECT_ID
-
-
-def _extract_host_from_url(url: str) -> str:
-    """Extract host from URL."""
-    try:
-        parsed = urlparse(url)
-        return parsed.netloc or parsed.path.split('/')[0]
-    except Exception:
-        return url
 
 
 # ============================================
@@ -67,35 +57,34 @@ def _build_inbound_row(entry: InboundLogEntry, project_id: str) -> list:
 
 def _build_outbound_row(entry: OutboundLogEntry, project_id: str) -> list:
     is_success = 1 if 200 <= entry.status_code < 400 else 0
-    target_host = _extract_host_from_url(entry.endpoint)
 
     return [
         project_id,
         entry.request_id,
-        '',              # parent_request_id
-        '',              # trace_id
-        '',              # span_id
+        entry.parent_request_id or '',
+        entry.trace_id or '',
+        entry.span_id or '',
         entry.timestamp,
-        entry.third_party_service or '',
-        target_host,
-        entry.endpoint,
+        entry.service_name or '',
+        entry.target_host or '',
+        entry.target_url,
         entry.method,
         entry.status_code,
-        entry.response_time_ms,
+        entry.latency_ms,
         is_success,
-        0,               # request_size
-        0,               # response_size
-        '',              # error_message
-        '',              # error_code
-        0,               # retry_count
+        entry.request_size or 0,
+        entry.response_size or 0,
+        entry.error_message or '',
+        entry.error_code or '',
+        entry.retry_count or 0,
         entry.module or '',
         entry.user_id or '',
-        '',              # request_headers
-        '',              # response_headers
+        entry.request_headers or '',
+        entry.response_headers or '',
         entry.request_body or '',
         entry.response_body or '',
         entry.tags or [],
-        '',              # metadata
+        entry.metadata or '',
     ]
 
 

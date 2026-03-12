@@ -14,8 +14,8 @@ from app.models.ingest import (
     BatchIngestRequest,
     InboundLogEntry,
     IngestResponse,
-    OutboundLogEntry,
 )
+from app.models.outbound import OutboundLogEntry
 from app.models.jobs import (
     BatchJobIngestRequest,
     JobIngestResponse,
@@ -64,11 +64,7 @@ async def ingest_single_log(
     """Ingest a single log entry (inbound or outbound)."""
     try:
         project_id = project.id if project else None
-        is_outbound = isinstance(entry, OutboundLogEntry) or (
-            hasattr(entry, "third_party_service") and entry.third_party_service is not None
-        )
-
-        if is_outbound and isinstance(entry, OutboundLogEntry):
+        if isinstance(entry, OutboundLogEntry):
             ingest_service.insert_outbound_log(entry, project_id)
         else:
             ingest_service.insert_inbound_log(entry, project_id)

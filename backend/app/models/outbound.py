@@ -1,26 +1,53 @@
 from datetime import datetime
 from typing import Optional
+from urllib.parse import urlparse
 
-from pydantic import BaseModel, Field
+from pydantic import AliasChoices, BaseModel, ConfigDict, Field, model_validator
 
 
 class OutboundLogEntry(BaseModel):
-    """Log entry for outbound HTTP requests to third-party services."""
+    """Log entry for outbound HTTP requests to third-party services.
+
+    Accepts both new field names and legacy SDK field names for backward
+    compatibility (e.g. third_party_service -> service_name).
+    """
+    model_config = ConfigDict(populate_by_name=True)
+
     # Required identifiers
     request_id: str = Field(..., description="Unique request identifier")
     timestamp: datetime = Field(default_factory=datetime.utcnow, description="Request timestamp (defaults to current UTC time)")
 
-    # Service info
-    service_name: str = Field(..., description="Name of the third-party service")
-    target_host: str = Field(..., description="Target host/domain")
-    target_url: str = Field(..., description="Full target URL")
+    # Service info (accepts legacy 'third_party_service' alias)
+    service_name: str = Field(
+        ..., description="Name of the third-party service",
+        validation_alias=AliasChoices("service_name", "third_party_service"),
+    )
+    target_host: Optional[str] = Field(None, description="Target host/domain (auto-derived from URL if omitted)")
+    target_url: str = Field(
+        ..., description="Full target URL",
+        validation_alias=AliasChoices("target_url", "endpoint"),
+    )
 
     # Request details
     method: str = Field(..., description="HTTP method (GET, POST, etc.)")
 
     # Response
     status_code: int = Field(..., ge=100, le=599, description="HTTP status code")
-    latency_ms: float = Field(..., ge=0, description="Response time in milliseconds")
+    latency_ms: float = Field(
+        ..., ge=0, description="Response time in milliseconds",
+        validation_alias=AliasChoices("latency_ms", "response_time_ms"),
+    )
+
+    @model_validator(mode="after")
+    def _derive_target_host(self) -> "OutboundLogEntry":
+        """Derive target_host from target_url if not provided."""
+        if not self.target_host:
+            if self.target_url:
+                parsed = urlparse(self.target_url)
+                self.target_host = parsed.netloc or parsed.path.split("/")[0] or ""
+            else:
+                self.target_host = ""
+        return self
 
     # Optional identifiers for distributed tracing
     parent_request_id: Optional[str] = Field(None, description="Parent request ID")
