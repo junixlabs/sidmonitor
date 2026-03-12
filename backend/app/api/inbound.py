@@ -10,6 +10,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.auth import verify_auth
+from app.api.stats._common import safe_float
 from app.models.inbound import (
     InboundEndpointStats,
     InboundLogDetail,
@@ -22,23 +23,6 @@ from app.services.clickhouse import get_clickhouse_client
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-
-# ============================================
-# Helper Functions
-# ============================================
-
-def safe_float(value, default: float = 0.0) -> float:
-    """Convert value to float, handling NaN and None."""
-    if value is None:
-        return default
-    try:
-        f = float(value)
-        if math.isnan(f) or math.isinf(f):
-            return default
-        return f
-    except (TypeError, ValueError):
-        return default
 
 
 def build_inbound_where_clause(

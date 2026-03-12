@@ -7,6 +7,8 @@ from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from app.api.auth import verify_auth
 from app.api.ingest import verify_api_key_and_get_project
+from app.api.stats._common import safe_float
+from app.constants import DEFAULT_PROJECT_ID
 from app.models.database import Project
 from app.models.outbound import (
     BatchOutboundIngestRequest,
@@ -24,8 +26,6 @@ from app.services.clickhouse import get_clickhouse_client
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
-
-DEFAULT_PROJECT_ID = "00000000-0000-0000-0000-000000000000"
 
 
 # ============================================
@@ -511,19 +511,6 @@ async def get_outbound_log_by_id(
 # ============================================
 # Stats Endpoints
 # ============================================
-
-def safe_float(value, default: float = 0.0) -> float:
-    """Convert value to float, handling NaN and None."""
-    if value is None:
-        return default
-    try:
-        f = float(value)
-        if math.isnan(f) or math.isinf(f):
-            return default
-        return f
-    except (TypeError, ValueError):
-        return default
-
 
 @router.get("/stats/outbound", response_model=OutboundOverallStats)
 async def get_outbound_stats(
