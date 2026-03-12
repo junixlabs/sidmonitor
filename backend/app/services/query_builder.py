@@ -62,7 +62,7 @@ class WhereBuilder:
         """Filter by date range with validation.
 
         Args:
-            field: The timestamp column name (e.g. "timestamp", "started_at").
+            field: Trusted column name — must not come from user input.
             best_effort: Use parseDateTimeBestEffort() for flexible ISO 8601 parsing.
         """
         if start_date:
@@ -106,6 +106,11 @@ class WhereBuilder:
             return self
         if status in STATUS_CODE_FILTERS:
             self.conditions.append(STATUS_CODE_FILTERS[status])
+        else:
+            raise HTTPException(
+                status_code=422,
+                detail=f"Invalid status filter: {status}. Valid values: {', '.join(STATUS_CODE_FILTERS)}",
+            )
         return self
 
     def eq(
@@ -144,7 +149,11 @@ class WhereBuilder:
         return self
 
     def raw(self, condition: str, **params: Any) -> "WhereBuilder":
-        """Add a raw SQL condition with optional params."""
+        """Add a raw SQL condition with optional params.
+
+        Warning: ``condition`` is interpolated directly into SQL.
+        Only pass trusted, hardcoded strings — never user input.
+        """
         self.conditions.append(condition)
         self.params.update(params)
         return self
