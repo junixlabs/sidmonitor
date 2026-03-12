@@ -2,6 +2,7 @@ import { useSearchParams } from 'react-router-dom'
 import StatsCard from '../components/dashboard/StatsCard'
 import JobsSummary from '../components/jobs/JobsSummary'
 import JobsDetail from '../components/jobs/JobsDetail'
+import { ErrorAlert } from '@/components/ui'
 import { useJobStats } from '../hooks/useJobs'
 import { formatNumber, formatPercentage, formatResponseTime } from '../utils/format'
 
@@ -9,7 +10,7 @@ export default function Jobs() {
   const [searchParams, setSearchParams] = useSearchParams()
   const jobClass = searchParams.get('job_class')
 
-  const { data: stats, isLoading: statsLoading } = useJobStats('24h')
+  const { data: stats, isLoading: statsLoading, error: statsError } = useJobStats('24h')
 
   const handleJobClick = (selectedJobClass: string) => {
     setSearchParams({ job_class: selectedJobClass })
@@ -22,6 +23,10 @@ export default function Jobs() {
   return (
     <div className="px-4 py-6 sm:px-0">
       <h1 className="text-2xl font-semibold text-text-primary mb-6">Job Monitoring</h1>
+
+      {statsError && (
+        <ErrorAlert message="Failed to load job stats" description="Please check your connection." className="mb-4" />
+      )}
 
       {/* Stats Cards - Always visible */}
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-4 mb-6">

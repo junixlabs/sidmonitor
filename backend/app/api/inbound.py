@@ -151,15 +151,7 @@ async def get_inbound_stats(
         )
     except Exception as e:
         logger.error(f"Error fetching inbound stats: {e}")
-        return InboundOverallStats(
-            total_requests=0,
-            success_count=0,
-            error_count=0,
-            success_rate=0.0,
-            avg_response_time_ms=0.0,
-            p95_response_time_ms=0.0,
-            modules_count=0,
-        )
+        raise HTTPException(status_code=500, detail="Error fetching inbound stats")
 
 
 @router.get("/stats/inbound/by-module", response_model=List[InboundModuleStats])
@@ -226,7 +218,7 @@ async def get_inbound_stats_by_module(
         return modules
     except Exception as e:
         logger.error(f"Error fetching inbound stats by module: {e}")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching inbound stats by module")
 
 
 @router.get("/stats/inbound/modules/{module_name}/endpoints", response_model=List[InboundEndpointStats])
@@ -307,7 +299,7 @@ async def get_inbound_module_endpoints(
         return endpoints
     except Exception as e:
         logger.error(f"Error fetching inbound module endpoints for {module_name}: {e}")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching inbound module endpoints")
 
 
 # ============================================
@@ -402,13 +394,7 @@ async def get_inbound_logs(
         )
     except Exception as e:
         logger.error(f"Error fetching inbound logs: {e}")
-        return InboundPaginatedResponse(
-            data=[],
-            total=0,
-            page=page,
-            page_size=page_size,
-            total_pages=0,
-        )
+        raise HTTPException(status_code=500, detail="Error fetching inbound logs")
 
 
 # IMPORTANT: Specific routes MUST be defined BEFORE parameterized routes
@@ -442,7 +428,7 @@ async def get_inbound_modules(
         return [row[0] for row in result.result_rows]
     except Exception as e:
         logger.error(f"Error fetching inbound modules: {e}")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching inbound modules")
 
 
 @router.get("/logs/inbound/endpoints", response_model=List[str], summary="List inbound endpoints")
@@ -478,7 +464,7 @@ async def get_inbound_endpoints(
         return [row[0] for row in result.result_rows]
     except Exception as e:
         logger.error(f"Error fetching inbound endpoints: {e}")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching inbound endpoints")
 
 
 # Parameterized route MUST be AFTER specific routes

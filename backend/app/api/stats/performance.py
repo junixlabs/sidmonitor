@@ -3,7 +3,7 @@
 import logging
 from typing import List, Literal, Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.auth import verify_auth
 from app.api.stats._common import safe_float
@@ -86,7 +86,7 @@ async def get_service_health(
         return services
     except Exception:
         logger.exception("Error fetching service health")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching service health")
 
 
 @router.get("/stats/module-health", response_model=List[ModuleHealth])
@@ -153,7 +153,7 @@ async def get_module_health(
         return modules
     except Exception:
         logger.exception("Error fetching module health")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching module health")
 
 
 @router.get("/stats/percentiles", response_model=PerformancePercentiles)
@@ -224,17 +224,7 @@ async def get_performance_percentiles(
         )
     except Exception:
         logger.exception("Error fetching performance percentiles")
-        return PerformancePercentiles(
-            p50=0.0,
-            p75=0.0,
-            p90=0.0,
-            p95=0.0,
-            p99=0.0,
-            max=0.0,
-            min=0.0,
-            avg=0.0,
-            total_requests=0
-        )
+        raise HTTPException(status_code=500, detail="Error fetching performance percentiles")
 
 
 @router.get("/stats/slow-requests", response_model=SlowRequestsSummary)
@@ -320,12 +310,7 @@ async def get_slow_requests(
         )
     except Exception:
         logger.exception("Error fetching slow requests")
-        return SlowRequestsSummary(
-            total_requests=0,
-            slow_count=0,
-            slow_percentage=0.0,
-            slowest_endpoints=[]
-        )
+        raise HTTPException(status_code=500, detail="Error fetching slow requests")
 
 
 @router.get("/stats/performance-timeline", response_model=List[PerformanceTimelinePoint])
@@ -394,4 +379,4 @@ async def get_performance_timeline(
         return timeline
     except Exception:
         logger.exception("Error fetching performance timeline")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching performance timeline")

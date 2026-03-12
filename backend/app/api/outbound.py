@@ -354,13 +354,7 @@ async def get_outbound_logs(
         )
     except Exception as e:
         logger.error(f"Error fetching outbound logs: {e}")
-        return OutboundPaginatedResponse(
-            data=[],
-            total=0,
-            page=page,
-            page_size=page_size,
-            total_pages=0,
-        )
+        raise HTTPException(status_code=500, detail="Error fetching outbound logs")
 
 
 # IMPORTANT: Specific routes MUST be defined BEFORE parameterized routes
@@ -391,7 +385,7 @@ async def get_outbound_services(
         return [row[0] for row in result.result_rows]
     except Exception as e:
         logger.error(f"Error fetching outbound services: {e}")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching outbound services")
 
 
 @router.get("/logs/outbound/hosts", response_model=List[str], summary="List outbound hosts")
@@ -419,7 +413,7 @@ async def get_outbound_hosts(
         return [row[0] for row in result.result_rows]
     except Exception as e:
         logger.error(f"Error fetching outbound hosts: {e}")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching outbound hosts")
 
 
 # Parameterized route MUST be AFTER specific routes
@@ -571,17 +565,7 @@ async def get_outbound_stats(
         )
     except Exception as e:
         logger.error(f"Error fetching outbound stats: {e}")
-        return OutboundOverallStats(
-            total_requests=0,
-            success_count=0,
-            failure_count=0,
-            success_rate=0.0,
-            avg_latency_ms=0.0,
-            p95_latency_ms=0.0,
-            services_count=0,
-            timeout_count=0,
-            total_retries=0,
-        )
+        raise HTTPException(status_code=500, detail="Error fetching outbound stats")
 
 
 @router.get("/stats/outbound/by-service", response_model=List[OutboundServiceStats])
@@ -648,7 +632,7 @@ async def get_outbound_stats_by_service(
         return services
     except Exception as e:
         logger.error(f"Error fetching outbound stats by service: {e}")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching outbound stats by service")
 
 
 @router.get("/stats/outbound/services/{service_name}/endpoints", response_model=List[OutboundEndpointStats])
@@ -736,7 +720,7 @@ async def get_outbound_service_endpoints(
         return endpoints
     except Exception as e:
         logger.error(f"Error fetching outbound service endpoints for {service_name}: {e}")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching outbound service endpoints")
 
 
 @router.get("/stats/outbound/by-host", response_model=List[OutboundHostStats])
@@ -799,4 +783,4 @@ async def get_outbound_stats_by_host(
         return hosts
     except Exception as e:
         logger.error(f"Error fetching outbound stats by host: {e}")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching outbound stats by host")

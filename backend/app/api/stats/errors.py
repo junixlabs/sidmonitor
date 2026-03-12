@@ -3,7 +3,7 @@
 import logging
 from typing import List, Literal, Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.auth import verify_auth
 from app.api.stats._common import safe_float
@@ -139,12 +139,7 @@ async def get_error_breakdown(
         )
     except Exception:
         logger.exception("Error fetching error breakdown")
-        return ErrorBreakdown(
-            total_errors=0,
-            client_errors_4xx=ErrorCategory(count=0, percentage=0.0),
-            server_errors_5xx=ErrorCategory(count=0, percentage=0.0),
-            by_status_code=[]
-        )
+        raise HTTPException(status_code=500, detail="Error fetching error breakdown")
 
 
 @router.get("/stats/error-endpoints", response_model=List[ErrorEndpoint])
@@ -255,7 +250,7 @@ async def get_error_endpoints(
         return endpoints
     except Exception:
         logger.exception("Error fetching error endpoints")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching error endpoints")
 
 
 @router.get("/stats/error-timeline", response_model=List[ErrorTimelinePoint])
@@ -328,4 +323,4 @@ async def get_error_timeline(
         return timeline
     except Exception:
         logger.exception("Error fetching error timeline")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching error timeline")

@@ -3,7 +3,7 @@
 import logging
 from typing import List, Literal, Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.auth import verify_auth
 from app.api.stats._common import safe_float
@@ -86,7 +86,7 @@ async def get_traffic_by_method(
         return traffic
     except Exception:
         logger.exception("Error fetching traffic by method")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching traffic by method")
 
 
 @router.get("/stats/peak-hours", response_model=List[PeakHourStats])
@@ -173,7 +173,7 @@ async def get_peak_hours(
         return peak_hours
     except Exception:
         logger.exception("Error fetching peak hours")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching peak hours")
 
 
 @router.get("/stats/traffic-by-day", response_model=List[TrafficByDay])
@@ -255,7 +255,7 @@ async def get_traffic_by_day(
         return traffic_by_day
     except Exception:
         logger.exception("Error fetching traffic by day")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching traffic by day")
 
 
 @router.get("/stats/throughput", response_model=ThroughputStats)
@@ -341,9 +341,4 @@ async def get_throughput(
         )
     except Exception:
         logger.exception("Error fetching throughput")
-        return ThroughputStats(
-            avg_requests_per_minute=0.0,
-            peak_requests_per_minute=0.0,
-            avg_requests_per_second=0.0,
-            timeline=[]
-        )
+        raise HTTPException(status_code=500, detail="Error fetching throughput")

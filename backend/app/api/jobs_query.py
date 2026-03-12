@@ -2,7 +2,7 @@ import logging
 import math
 from typing import List, Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.auth import verify_auth
 from app.models.jobs import (
@@ -154,13 +154,7 @@ async def get_jobs(
         )
     except Exception as e:
         logger.error(f"Error fetching jobs: {e}")
-        return PaginatedResponse(
-            data=[],
-            total=0,
-            page=page,
-            page_size=page_size,
-            total_pages=0,
-        )
+        raise HTTPException(status_code=500, detail="Error fetching jobs")
 
 
 @router.get("/jobs/stats", response_model=JobHealthStats)
@@ -313,23 +307,7 @@ async def get_job_stats(
         )
     except Exception as e:
         logger.error(f"Error fetching job stats: {e}")
-        return JobHealthStats(
-            total_executions=0,
-            success_count=0,
-            failure_count=0,
-            retrying_count=0,
-            pending_count=0,
-            cancelled_count=0,
-            timeout_count=0,
-            success_rate=0.0,
-            avg_duration_ms=0.0,
-            p50_duration_ms=0.0,
-            p95_duration_ms=0.0,
-            p99_duration_ms=0.0,
-            by_queue=[],
-            by_job_class=[],
-            recent_failures=[],
-        )
+        raise HTTPException(status_code=500, detail="Error fetching job stats")
 
 
 @router.get("/jobs/timeline", response_model=List[JobTimelinePoint])
@@ -389,7 +367,7 @@ async def get_job_timeline(
         return timeline
     except Exception as e:
         logger.error(f"Error fetching job timeline: {e}")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching job timeline")
 
 
 @router.get("/scheduled-tasks", response_model=PaginatedResponse)
@@ -504,13 +482,7 @@ async def get_scheduled_tasks(
         )
     except Exception as e:
         logger.error(f"Error fetching scheduled tasks: {e}")
-        return PaginatedResponse(
-            data=[],
-            total=0,
-            page=page,
-            page_size=page_size,
-            total_pages=0,
-        )
+        raise HTTPException(status_code=500, detail="Error fetching scheduled tasks")
 
 
 @router.get("/scheduled-tasks/stats", response_model=ScheduledTaskHealthStats)
@@ -645,15 +617,4 @@ async def get_scheduled_task_stats(
         )
     except Exception as e:
         logger.error(f"Error fetching scheduled task stats: {e}")
-        return ScheduledTaskHealthStats(
-            total_executions=0,
-            success_count=0,
-            failure_count=0,
-            missed_count=0,
-            success_rate=0.0,
-            avg_delay_ms=0.0,
-            avg_duration_ms=0.0,
-            by_command=[],
-            recent_failures=[],
-            missed_tasks=[],
-        )
+        raise HTTPException(status_code=500, detail="Error fetching scheduled task stats")

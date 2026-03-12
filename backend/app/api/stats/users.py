@@ -3,7 +3,7 @@
 import logging
 from typing import List, Literal, Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.auth import verify_auth
 from app.api.stats._common import safe_float
@@ -92,7 +92,7 @@ async def get_top_users(
         return users
     except Exception:
         logger.exception("Error fetching top users")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching top users")
 
 
 @router.get("/stats/user-activity", response_model=List[UserActivityPoint])
@@ -158,7 +158,7 @@ async def get_user_activity(
         return activity
     except Exception:
         logger.exception("Error fetching user activity")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching user activity")
 
 
 @router.get("/stats/users-with-errors", response_model=List[UserWithErrors])
@@ -228,4 +228,4 @@ async def get_users_with_errors(
         return users
     except Exception:
         logger.exception("Error fetching users with errors")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching users with errors")

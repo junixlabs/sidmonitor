@@ -3,7 +3,7 @@
 import logging
 from typing import List, Literal, Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.auth import verify_auth
 from app.api.stats._common import safe_float
@@ -142,12 +142,7 @@ async def get_dashboard_stats(
         )
     except Exception:
         logger.exception("Error fetching dashboard stats")
-        return DashboardStats(
-            total_requests=0,
-            error_rate=0.0,
-            avg_response_time=0.0,
-            requests_per_minute=0.0,
-        )
+        raise HTTPException(status_code=500, detail="Error fetching dashboard stats")
 
 
 @router.get("/stats/timeseries", response_model=List[TimeSeriesPoint])
@@ -249,7 +244,7 @@ async def get_timeseries_data(
         return data
     except Exception:
         logger.exception("Error fetching timeseries data")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching timeseries data")
 
 
 @router.get("/stats/top-endpoints", response_model=List[EndpointStats])
@@ -321,7 +316,7 @@ async def get_top_endpoints(
         return endpoints
     except Exception:
         logger.exception("Error fetching top endpoints")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching top endpoints")
 
 
 @router.get("/stats/counts", response_model=RequestCounts)
@@ -372,11 +367,7 @@ async def get_request_counts(
         )
     except Exception:
         logger.exception("Error fetching request counts")
-        return RequestCounts(
-            all=0,
-            inbound=0,
-            outbound=0
-        )
+        raise HTTPException(status_code=500, detail="Error fetching request counts")
 
 
 @router.get("/stats/global", response_model=GlobalDashboardStats)
@@ -463,10 +454,4 @@ async def get_global_dashboard_stats(
         )
     except Exception:
         logger.exception("Error fetching global dashboard stats")
-        return GlobalDashboardStats(
-            total_projects=0,
-            total_requests=0,
-            overall_error_rate=0.0,
-            projects=[],
-            most_active_projects=[]
-        )
+        raise HTTPException(status_code=500, detail="Error fetching global dashboard stats")

@@ -172,13 +172,7 @@ async def get_logs(
         )
     except Exception as e:
         logger.error(f"Error fetching logs: {e}")
-        return PaginatedResponse(
-            data=[],
-            total=0,
-            page=page,
-            page_size=page_size,
-            total_pages=0,
-        )
+        raise HTTPException(status_code=500, detail="Error fetching logs")
 
 
 @router.get("/logs/{log_id}", response_model=LogEntry)
@@ -257,7 +251,7 @@ async def get_modules(_: bool = Depends(verify_auth)):
         return [row[0] for row in result.result_rows]
     except Exception as e:
         logger.error(f"Error fetching modules: {e}")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching modules")
 
 
 @router.get("/endpoints", response_model=List[str], summary="List all endpoints")
@@ -275,4 +269,4 @@ async def get_endpoints(_: bool = Depends(verify_auth)):
         return [row[0] for row in result.result_rows]
     except Exception as e:
         logger.error(f"Error fetching endpoints: {e}")
-        return []
+        raise HTTPException(status_code=500, detail="Error fetching endpoints")
