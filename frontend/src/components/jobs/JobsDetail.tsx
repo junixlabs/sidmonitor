@@ -4,8 +4,7 @@ import { formatDuration, formatDate } from '../../utils/format'
 import { ErrorAlert, DetailsModal } from '@/components/ui'
 import type { DetailField } from '@/components/ui'
 import type { JobFilterParams, JobLog, JobStatus } from '../../types'
-
-const DEFAULT_PAGE_SIZE = 20
+import { DEFAULT_PAGE_SIZE } from '../../utils/constants'
 
 const statusColors: Record<JobStatus, string> = {
   started: 'bg-status-info/10 text-status-info',

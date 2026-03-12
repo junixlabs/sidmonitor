@@ -5,62 +5,31 @@ import { DetailsModal, ErrorAlert } from '@/components/ui'
 import type { DetailField } from '@/components/ui'
 import { useLogs, useModules } from '../hooks/useLogs'
 import { formatCount } from '../utils/format'
+import { downloadFile, convertToCSV, generateFilename } from '../utils/exportHelpers'
+import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from '../utils/constants'
 import type { FilterParams, LogEntry } from '../types'
 
-const DEFAULT_PAGE_SIZE = 20
-const PAGE_SIZE_OPTIONS = [20, 50, 100]
+const CSV_HEADERS = ['timestamp', 'method', 'endpoint', 'status_code', 'response_time_ms', 'user', 'module']
 
-// Helper function to convert logs to CSV format
-function convertToCSV(logs: LogEntry[]): string {
-  const headers = ['timestamp', 'method', 'endpoint', 'status_code', 'response_time_ms', 'user', 'module']
-  const csvRows = [headers.join(',')]
-
-  logs.forEach((log) => {
-    const row = [
-      log.timestamp,
-      log.method,
-      `"${log.endpoint.replace(/"/g, '""')}"`, // Escape quotes in endpoint
-      log.status_code,
-      log.response_time_ms,
-      log.user_name || log.user_id || '',
-      log.module || '',
-    ]
-    csvRows.push(row.join(','))
-  })
-
-  return csvRows.join('\n')
+function csvRowMapper(log: LogEntry) {
+  return [
+    log.timestamp,
+    log.method,
+    log.endpoint,
+    log.status_code,
+    log.response_time_ms,
+    log.user_name || log.user_id || '',
+    log.module || '',
+  ]
 }
 
-// Helper function to generate filename with current date and filter info
-function generateFilename(format: 'csv' | 'json', filters: FilterParams): string {
-  const date = new Date().toISOString().split('T')[0]
-  let filename = `logs-${date}`
-
-  // Add filter info to filename if filtered
-  const filterParts: string[] = []
-  if (filters.status) filterParts.push(`status-${filters.status}`)
-  if (filters.module) filterParts.push(`module-${filters.module}`)
-  if (filters.endpoint) filterParts.push('filtered')
-  if (filters.user) filterParts.push('filtered')
-
-  if (filterParts.length > 0) {
-    filename += `-${filterParts.join('-')}`
-  }
-
-  return `${filename}.${format}`
-}
-
-// Helper function to trigger browser download
-function downloadFile(content: string, filename: string, mimeType: string) {
-  const blob = new Blob([content], { type: mimeType })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = filename
-  document.body.appendChild(link)
-  link.click()
-  document.body.removeChild(link)
-  URL.revokeObjectURL(url)
+function buildFilterParts(filters: FilterParams): string[] {
+  const parts: string[] = []
+  if (filters.status) parts.push(`status-${filters.status}`)
+  if (filters.module) parts.push(`module-${filters.module}`)
+  if (filters.endpoint) parts.push('filtered')
+  if (filters.user) parts.push('filtered')
+  return parts
 }
 
 export default function Logs() {
@@ -111,8 +80,8 @@ export default function Logs() {
     if (!logsData?.data || logsData.data.length === 0) {
       return
     }
-    const csv = convertToCSV(logsData.data)
-    const filename = generateFilename('csv', filters)
+    const csv = convertToCSV(logsData.data, CSV_HEADERS, csvRowMapper)
+    const filename = generateFilename('logs', 'csv', buildFilterParts(filters))
     downloadFile(csv, filename, 'text/csv')
     setShowExportMenu(false)
   }, [logsData, filters])
@@ -122,7 +91,7 @@ export default function Logs() {
       return
     }
     const json = JSON.stringify(logsData.data, null, 2)
-    const filename = generateFilename('json', filters)
+    const filename = generateFilename('logs', 'json', buildFilterParts(filters))
     downloadFile(json, filename, 'application/json')
     setShowExportMenu(false)
   }, [logsData, filters])

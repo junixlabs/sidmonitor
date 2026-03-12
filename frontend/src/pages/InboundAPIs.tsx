@@ -7,8 +7,8 @@ import { DEFAULT_PAGE_SIZE, STATUS_OPTIONS, METHOD_OPTIONS } from '../utils/cons
 import { getStatusColor, getMethodColor } from '../utils/styleHelpers'
 import { downloadFile, convertToCSV, generateFilename } from '../utils/exportHelpers'
 import { formatResponseTime } from '../utils/format'
-import { Pagination, ExportButton, DetailsModal } from '../components/common'
-import type { DetailField } from '../components/common'
+import { Pagination, ExportButton, DetailsModal } from '@/components/ui'
+import type { DetailField } from '@/components/ui'
 import { ErrorAlert } from '@/components/ui'
 import type { InboundLogFilterParams, InboundLog } from '../types'
 

@@ -10,8 +10,7 @@ import * as cronParser from 'cron-parser'
 import { formatDistanceToNow } from 'date-fns'
 import { ArrowLeft } from 'lucide-react'
 import { formatNumber, formatPercentage, formatResponseTime, formatDate } from '../utils/format'
-
-const DEFAULT_PAGE_SIZE = 20
+import { DEFAULT_PAGE_SIZE } from '../utils/constants'
 
 const statusColors: Record<ScheduledTaskStatus, string> = {
   scheduled: 'bg-surface-tertiary text-text-secondary',
