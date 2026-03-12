@@ -10,6 +10,7 @@ import {
   Settings,
   BarChart3,
   ChevronsLeft,
+  Sparkles,
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -71,6 +72,11 @@ const navGroups: NavGroup[] = [
         path: '/settings',
         label: 'Settings',
         icon: <Settings className="w-5 h-5" />,
+      },
+      {
+        path: '/whats-new',
+        label: "What's New",
+        icon: <Sparkles className="w-5 h-5" />,
       },
     ],
   },

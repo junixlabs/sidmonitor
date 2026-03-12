@@ -35,7 +35,7 @@ async def get_traffic_by_method(
 
         # Build WHERE conditions
         wb = WhereBuilder()
-        wb.project(project_id).date_range(start_date, end_date)
+        wb.project(project_id).date_range(start_date, end_date, best_effort=True)
         where_clause, params = wb.build()
 
         query = f"""
@@ -91,7 +91,7 @@ async def get_peak_hours(
 
         # Build WHERE conditions
         wb = WhereBuilder()
-        wb.project(project_id).date_range(start_date, end_date)
+        wb.project(project_id).date_range(start_date, end_date, best_effort=True)
         where_clause, params = wb.build()
 
         query = f"""
@@ -164,7 +164,7 @@ async def get_traffic_by_day(
 
         # Build WHERE conditions
         wb = WhereBuilder()
-        wb.project(project_id).date_range(start_date, end_date)
+        wb.project(project_id).date_range(start_date, end_date, best_effort=True)
         where_clause, params = wb.build()
 
         query = f"""
@@ -234,7 +234,7 @@ async def get_throughput(
 
         # Build WHERE conditions
         wb = WhereBuilder()
-        wb.project(project_id).date_range(start_date, end_date)
+        wb.project(project_id).date_range(start_date, end_date, best_effort=True)
         where_clause, params = wb.build()
 
         # Map interval to ClickHouse function

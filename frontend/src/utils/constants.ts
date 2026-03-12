@@ -43,3 +43,6 @@ export const STORAGE = {
   THEME_DENSITY: 'sidmonitor-theme-density',
   SIDEBAR_COLLAPSED: 'sidebarCollapsed',
 } as const
+
+// -- App Version --
+export const APP_VERSION = '0.3.0'

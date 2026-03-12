@@ -42,7 +42,7 @@ async def get_service_health(
 
         # Build additional conditions
         wb = WhereBuilder()
-        wb.project(project_id).date_range(start_date, end_date)
+        wb.project(project_id).date_range(start_date, end_date, best_effort=True)
         additional_conditions, params = wb.build_and()
 
         query = f"""
@@ -100,7 +100,7 @@ async def get_module_health(
 
         # Build additional conditions
         wb = WhereBuilder()
-        wb.project(project_id).date_range(start_date, end_date)
+        wb.project(project_id).date_range(start_date, end_date, best_effort=True)
         additional_conditions, params = wb.build_and()
 
         query = f"""
@@ -153,7 +153,7 @@ async def get_performance_percentiles(
 
         # Build WHERE conditions
         wb = WhereBuilder()
-        wb.project(project_id).date_range(start_date, end_date).request_type(type)
+        wb.project(project_id).date_range(start_date, end_date, best_effort=True).request_type(type)
         where_clause, params = wb.build()
 
         # Query percentiles using ClickHouse quantile functions
@@ -205,7 +205,7 @@ async def get_slow_requests(
 
         # Build WHERE conditions
         wb = WhereBuilder()
-        wb.project(project_id).date_range(start_date, end_date)
+        wb.project(project_id).date_range(start_date, end_date, best_effort=True)
         where_clause, params = wb.build()
         params["threshold_ms"] = threshold_ms
 
@@ -227,7 +227,7 @@ async def get_slow_requests(
 
         # Query for slowest endpoints
         inner_wb = WhereBuilder()
-        inner_wb.project(project_id).date_range(start_date, end_date)
+        inner_wb.project(project_id).date_range(start_date, end_date, best_effort=True)
         inner_wb.raw("response_time_ms >= %(threshold_ms)s", threshold_ms=threshold_ms)
         slowest_where_clause, slowest_params = inner_wb.build()
 

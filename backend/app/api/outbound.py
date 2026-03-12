@@ -201,7 +201,7 @@ async def get_outbound_logs(
         client = get_clickhouse_client()
 
         wb = WhereBuilder()
-        wb.project(project_id).date_range(start_date, end_date)
+        wb.project(project_id).date_range(start_date, end_date, best_effort=True)
         wb.eq("service_name", service_name)
         wb.like("target_host", target_host)
         wb.status_code(status)
@@ -449,7 +449,7 @@ async def get_outbound_stats(
         client = get_clickhouse_client()
 
         wb = WhereBuilder()
-        wb.project(project_id).date_range(start_date, end_date)
+        wb.project(project_id).date_range(start_date, end_date, best_effort=True)
         where_clause, params = wb.build()
 
         query = f"""
@@ -499,7 +499,7 @@ async def get_outbound_stats_by_service(
         client = get_clickhouse_client()
 
         wb = WhereBuilder()
-        wb.project(project_id).date_range(start_date, end_date)
+        wb.project(project_id).date_range(start_date, end_date, best_effort=True)
         wb.not_empty("service_name")
         where_clause, params = wb.build()
         params["limit"] = limit
@@ -560,7 +560,7 @@ async def get_outbound_service_endpoints(
         client = get_clickhouse_client()
 
         wb = WhereBuilder()
-        wb.project(project_id).date_range(start_date, end_date)
+        wb.project(project_id).date_range(start_date, end_date, best_effort=True)
         wb.eq("service_name", service_name)
         where_clause, params = wb.build()
         params["limit"] = limit
@@ -632,7 +632,7 @@ async def get_outbound_stats_by_host(
         client = get_clickhouse_client()
 
         wb = WhereBuilder()
-        wb.project(project_id).date_range(start_date, end_date)
+        wb.project(project_id).date_range(start_date, end_date, best_effort=True)
         wb.not_empty("target_host")
         where_clause, params = wb.build()
         params["limit"] = limit

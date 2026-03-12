@@ -156,30 +156,37 @@ async def get_job_stats(
         wb.eq("queue_name", queue_name)
         where_clause, params = wb.build_conditions()
 
+        # Note: job_logs uses MergeTree and may contain duplicate rows.
+        # All queries use GROUP BY job_id with any() to deduplicate.
+
         # Overall stats with P50, P95, P99 and additional status counts
         overall_query = f"""
             SELECT
                 count(*) as total_executions,
-                countIf(status IN ('completed', 'success')) as success_count,
-                countIf(status = 'failed') as failure_count,
-                countIf(status = 'retrying') as retrying_count,
-                countIf(status = 'pending') as pending_count,
-                countIf(status = 'cancelled') as cancelled_count,
-                countIf(status = 'timeout') as timeout_count,
+                countIf(s IN ('completed', 'success')) as success_count,
+                countIf(s = 'failed') as failure_count,
+                countIf(s = 'retrying') as retrying_count,
+                countIf(s = 'pending') as pending_count,
+                countIf(s = 'cancelled') as cancelled_count,
+                countIf(s = 'timeout') as timeout_count,
                 round(
                     if(
-                        countIf(status IN ('completed', 'success', 'failed')) > 0,
-                        countIf(status IN ('completed', 'success')) * 100.0 / countIf(status IN ('completed', 'success', 'failed')),
+                        countIf(s IN ('completed', 'success', 'failed')) > 0,
+                        countIf(s IN ('completed', 'success')) * 100.0 / countIf(s IN ('completed', 'success', 'failed')),
                         0
                     ),
                     2
                 ) as success_rate,
-                round(avg(duration_ms), 2) as avg_duration_ms,
-                round(quantile(0.50)(duration_ms), 2) as p50_duration_ms,
-                round(quantile(0.95)(duration_ms), 2) as p95_duration_ms,
-                round(quantile(0.99)(duration_ms), 2) as p99_duration_ms
-            FROM job_logs
-            WHERE {where_clause}
+                round(avg(d), 2) as avg_duration_ms,
+                round(quantile(0.50)(d), 2) as p50_duration_ms,
+                round(quantile(0.95)(d), 2) as p95_duration_ms,
+                round(quantile(0.99)(d), 2) as p99_duration_ms
+            FROM (
+                SELECT any(status) as s, any(duration_ms) as d
+                FROM job_logs
+                WHERE {where_clause}
+                GROUP BY job_id
+            )
         """
 
         result = client.query(overall_query, parameters=params)
@@ -188,14 +195,18 @@ async def get_job_stats(
         # Stats by queue
         queue_query = f"""
             SELECT
-                queue_name,
+                q as queue_name,
                 count(*) as total_executions,
-                countIf(status = 'completed') as success_count,
-                countIf(status = 'failed') as failure_count,
-                round(avg(duration_ms), 2) as avg_duration_ms
-            FROM job_logs
-            WHERE {where_clause}
-            GROUP BY queue_name
+                countIf(s IN ('completed', 'success')) as success_count,
+                countIf(s = 'failed') as failure_count,
+                round(avg(d), 2) as avg_duration_ms
+            FROM (
+                SELECT any(queue_name) as q, any(status) as s, any(duration_ms) as d
+                FROM job_logs
+                WHERE {where_clause}
+                GROUP BY job_id
+            )
+            GROUP BY q
             ORDER BY total_executions DESC
         """
 
@@ -214,14 +225,18 @@ async def get_job_stats(
         # Stats by job class
         class_query = f"""
             SELECT
-                job_class,
+                jc as job_class,
                 count(*) as total_executions,
-                countIf(status = 'completed') as success_count,
-                countIf(status = 'failed') as failure_count,
-                round(avg(duration_ms), 2) as avg_duration_ms
-            FROM job_logs
-            WHERE {where_clause}
-            GROUP BY job_class
+                countIf(s IN ('completed', 'success')) as success_count,
+                countIf(s = 'failed') as failure_count,
+                round(avg(d), 2) as avg_duration_ms
+            FROM (
+                SELECT any(job_class) as jc, any(status) as s, any(duration_ms) as d
+                FROM job_logs
+                WHERE {where_clause}
+                GROUP BY job_id
+            )
+            GROUP BY jc
             ORDER BY total_executions DESC
             LIMIT 10
         """
@@ -238,16 +253,18 @@ async def get_job_stats(
             for r in class_result.result_rows
         ]
 
-        # Recent failures
-        failures_query = """
+        # Recent failures (dedup by job_id using GROUP BY + HAVING)
+        failures_query = f"""
             SELECT
                 job_id,
-                job_class,
-                formatDateTime(started_at, '%%Y-%%m-%%d %%H:%%i:%%S') as timestamp_str,
-                exception_message
+                any(job_class) as jc,
+                formatDateTime(any(started_at), '%%Y-%%m-%%d %%H:%%i:%%S') as timestamp_str,
+                any(exception_message) as em
             FROM job_logs
-            WHERE """ + where_clause + """ AND status = 'failed'
-            ORDER BY started_at DESC
+            WHERE {where_clause}
+            GROUP BY job_id
+            HAVING any(status) = 'failed'
+            ORDER BY any(started_at) DESC
             LIMIT 5
         """
 

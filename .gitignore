@@ -53,6 +53,7 @@ backend/data/
 
 # Claude Code / AI tools
 .claude/
+.forge/
 .mcp.json
 .worktrees/
 CLAUDE.md

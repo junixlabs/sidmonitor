@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { useAuth } from '../../contexts/AuthContext'
 import { useTheme } from '../../contexts/ThemeContext'
+import { useHealthAlerts } from '@/hooks/useHealthAlerts'
 import {
   ChevronDown,
   Search,
@@ -11,6 +12,7 @@ import {
   Moon,
   Sun,
   Check,
+  CheckCircle,
   LayoutGrid,
   Building,
   Settings,
@@ -29,6 +31,7 @@ export default function Header({ sidebarCollapsed }: HeaderProps) {
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showProjectMenu, setShowProjectMenu] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
+  const [readAlertIds, setReadAlertIds] = useState<Set<string>>(new Set())
 
   const userMenuRef = useRef<HTMLDivElement>(null)
   const projectMenuRef = useRef<HTMLDivElement>(null)
@@ -62,9 +65,10 @@ export default function Header({ sidebarCollapsed }: HeaderProps) {
     window.location.reload()
   }
 
-  // Mock notification count - replace with real data later
-  const notificationCount = 3
-  const criticalCount = 1
+  const { alerts } = useHealthAlerts()
+  const unreadAlerts = alerts.filter((a) => !readAlertIds.has(a.id))
+  const unreadCriticalCount = unreadAlerts.filter((a) => a.severity === 'critical').length
+  const notificationCount = unreadAlerts.length
 
   return (
     <header
@@ -215,7 +219,7 @@ export default function Header({ sidebarCollapsed }: HeaderProps) {
       {/* Right section - Actions */}
       <div className="flex items-center gap-2">
         {/* Critical alerts indicator */}
-        {criticalCount > 0 && (
+        {unreadCriticalCount > 0 && (
           <button
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-sm font-medium"
             style={{
@@ -224,7 +228,7 @@ export default function Header({ sidebarCollapsed }: HeaderProps) {
             }}
           >
             <AlertTriangle className="w-4 h-4" />
-            {criticalCount} Critical
+            {unreadCriticalCount} Critical
           </button>
         )}
 
@@ -267,66 +271,58 @@ export default function Header({ sidebarCollapsed }: HeaderProps) {
                 <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
                   Notifications
                 </span>
-                <button className="text-xs" style={{ color: 'var(--accent-primary)' }}>
-                  Mark all read
-                </button>
+                {unreadAlerts.length > 0 && (
+                  <button
+                    className="text-xs"
+                    style={{ color: 'var(--accent-primary)' }}
+                    onClick={() => setReadAlertIds(new Set(alerts.map((a) => a.id)))}
+                  >
+                    Mark all read
+                  </button>
+                )}
               </div>
               <div className="max-h-96 overflow-y-auto">
-                {/* Placeholder notifications */}
-                <div
-                  className="px-4 py-3 border-b transition-colors hover:bg-opacity-50"
-                  style={{ borderColor: 'var(--border-subtle)' }}
-                >
-                  <div className="flex items-start gap-3">
-                    <div
-                      className="w-2 h-2 mt-2 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: 'var(--status-error)' }}
-                    />
-                    <div>
-                      <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                        API error rate exceeded 5%
-                      </p>
-                      <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                        Production • 2 minutes ago
-                      </p>
-                    </div>
+                {unreadAlerts.length === 0 ? (
+                  <div className="px-4 py-6 text-center">
+                    <CheckCircle className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--status-success)' }} />
+                    <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
+                      {alerts.length > 0 ? 'All alerts marked as read' : 'No active alerts'}
+                    </p>
                   </div>
-                </div>
-                <div
-                  className="px-4 py-3 border-b transition-colors hover:bg-opacity-50"
-                  style={{ borderColor: 'var(--border-subtle)' }}
-                >
-                  <div className="flex items-start gap-3">
+                ) : (
+                  unreadAlerts.map((alert, index) => (
                     <div
-                      className="w-2 h-2 mt-2 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: 'var(--status-warning)' }}
-                    />
-                    <div>
-                      <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                        Response time elevated on /api/users
-                      </p>
-                      <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                        Production • 15 minutes ago
-                      </p>
+                      key={alert.id}
+                      className={cn(
+                        'px-4 py-3 transition-colors hover:bg-opacity-50',
+                        index < unreadAlerts.length - 1 && 'border-b'
+                      )}
+                      style={{ borderColor: 'var(--border-subtle)' }}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className="w-2 h-2 mt-2 rounded-full flex-shrink-0"
+                          style={{
+                            backgroundColor:
+                              alert.severity === 'critical'
+                                ? 'var(--status-error)'
+                                : alert.severity === 'warning'
+                                  ? 'var(--status-warning)'
+                                  : 'var(--status-info)',
+                          }}
+                        />
+                        <div>
+                          <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                            {alert.message}
+                          </p>
+                          <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
+                            {alert.detail}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
-                <div className="px-4 py-3">
-                  <div className="flex items-start gap-3">
-                    <div
-                      className="w-2 h-2 mt-2 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: 'var(--status-info)' }}
-                    />
-                    <div>
-                      <p className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                        Deployment completed: v1.2.3
-                      </p>
-                      <p className="text-xs mt-1" style={{ color: 'var(--text-muted)' }}>
-                        Production • 2 hours ago
-                      </p>
-                    </div>
-                  </div>
-                </div>
+                  ))
+                )}
               </div>
             </div>
           )}

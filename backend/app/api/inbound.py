@@ -42,7 +42,7 @@ async def get_inbound_stats(
         client = get_clickhouse_client()
 
         wb = WhereBuilder()
-        wb.inbound_only().project(project_id).date_range(start_date, end_date)
+        wb.inbound_only().project(project_id).date_range(start_date, end_date, best_effort=True)
         where_clause, params = wb.build()
 
         query = f"""
@@ -88,7 +88,7 @@ async def get_inbound_stats_by_module(
         client = get_clickhouse_client()
 
         wb = WhereBuilder()
-        wb.inbound_only().project(project_id).date_range(start_date, end_date).not_empty("module")
+        wb.inbound_only().project(project_id).date_range(start_date, end_date, best_effort=True).not_empty("module")
         where_clause, params = wb.build()
         params["limit"] = limit
 
@@ -148,7 +148,7 @@ async def get_inbound_module_endpoints(
         client = get_clickhouse_client()
 
         wb = WhereBuilder()
-        wb.inbound_only().eq("module", module_name, param_name="module_name").project(project_id).date_range(start_date, end_date)
+        wb.inbound_only().eq("module", module_name, param_name="module_name").project(project_id).date_range(start_date, end_date, best_effort=True)
         where_clause, params = wb.build()
         params["limit"] = limit
 
@@ -223,7 +223,7 @@ async def get_inbound_logs(
         client = get_clickhouse_client()
 
         wb = WhereBuilder()
-        wb.inbound_only().project(project_id).date_range(start_date, end_date)
+        wb.inbound_only().project(project_id).date_range(start_date, end_date, best_effort=True)
         wb.status_code(status).eq("module", module).like("endpoint", endpoint)
         wb.eq("method", method.upper() if method else None).user_search(user)
         wb.like("request_id", request_id)

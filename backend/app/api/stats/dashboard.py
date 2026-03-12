@@ -1,12 +1,18 @@
 """Dashboard stats endpoints."""
 
 import logging
+import uuid as uuid_module
 from typing import List, Literal, Optional
+
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.auth import verify_auth
 from app.api.stats._common import safe_float
+from app.database import get_db
+from app.models.database import Project as ProjectModel
 from app.services.query_builder import WhereBuilder
 from app.models.stats import (
     DashboardStats,
@@ -20,6 +26,15 @@ from app.models.stats import (
 from app.services.clickhouse import get_clickhouse_client
 
 logger = logging.getLogger(__name__)
+
+
+def _is_valid_uuid(val: str) -> bool:
+    """Check if a string is a valid UUID."""
+    try:
+        uuid_module.UUID(val)
+        return True
+    except (ValueError, AttributeError):
+        return False
 
 router = APIRouter()
 
@@ -38,7 +53,7 @@ async def get_dashboard_stats(
 
         # Build WHERE conditions
         wb = WhereBuilder()
-        wb.project(project_id).date_range(start_date, end_date).request_type(type)
+        wb.project(project_id).date_range(start_date, end_date, best_effort=True).request_type(type)
         where_clause, params = wb.build()
 
         # Current period query
@@ -211,7 +226,7 @@ async def get_top_endpoints(
 
         # Build WHERE conditions
         wb = WhereBuilder()
-        wb.project(project_id).date_range(start_date, end_date).request_type(type)
+        wb.project(project_id).date_range(start_date, end_date, best_effort=True).request_type(type)
         where_clause, params = wb.build()
 
         # Add limit parameter to prevent SQL injection
@@ -264,7 +279,7 @@ async def get_request_counts(
 
         # Build WHERE conditions
         wb = WhereBuilder()
-        wb.project(project_id).date_range(start_date, end_date)
+        wb.project(project_id).date_range(start_date, end_date, best_effort=True)
         where_clause, params = wb.build()
 
         query = f"""
@@ -294,6 +309,7 @@ async def get_global_dashboard_stats(
     start_date: Optional[str] = Query(None),
     end_date: Optional[str] = Query(None),
     _: bool = Depends(verify_auth),
+    db: AsyncSession = Depends(get_db),
 ):
     """Get global dashboard statistics across all projects."""
     try:
@@ -301,7 +317,7 @@ async def get_global_dashboard_stats(
 
         # Build WHERE conditions
         wb = WhereBuilder()
-        wb.date_range(start_date, end_date)
+        wb.date_range(start_date, end_date, best_effort=True)
         where_clause, params = wb.build()
 
         # Query to get stats per project (last 24h if no date range specified)
@@ -318,6 +334,20 @@ async def get_global_dashboard_stats(
         """
 
         result = client.query(query, parameters=params)
+
+        # Resolve project names from PostgreSQL
+        project_ids = [str(row[0]) for row in result.result_rows]
+        project_name_map: dict[str, str] = {}
+        if project_ids:
+            valid_uuids = [uuid_module.UUID(pid) for pid in project_ids if _is_valid_uuid(pid)]
+            if valid_uuids:
+                pg_result = await db.execute(
+                    select(ProjectModel.id, ProjectModel.name).where(
+                        ProjectModel.id.in_(valid_uuids)
+                    )
+                )
+                for row_pg in pg_result.all():
+                    project_name_map[str(row_pg[0])] = row_pg[1]
 
         # Calculate health status based on error rate
         def get_health_status(error_rate: float) -> str:
@@ -340,9 +370,11 @@ async def get_global_dashboard_stats(
             total_requests_all += total_requests
             total_errors_all += int((error_rate / 100.0) * total_requests)
 
+            project_name = project_name_map.get(project_id, f"Project {project_id[:8]}")
+
             projects.append(ProjectStats(
                 project_id=project_id,
-                project_name=f"Project {project_id[:8]}",  # Simplified - could join with projects table
+                project_name=project_name,
                 total_requests=total_requests,
                 error_rate=error_rate,
                 avg_response_time=avg_response_time,

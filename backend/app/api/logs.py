@@ -35,7 +35,7 @@ async def get_logs(
         # Build WHERE clause with WhereBuilder
         wb = WhereBuilder()
         wb.project(project_id)
-        wb.date_range(start_date, end_date)
+        wb.date_range(start_date, end_date, best_effort=True)
         wb.status_code(status)
         wb.like("endpoint", endpoint)
         wb.eq("module", module)

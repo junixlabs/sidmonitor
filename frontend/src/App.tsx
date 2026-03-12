@@ -19,6 +19,7 @@ const Projects = lazy(() => import('./pages/Projects'))
 const GlobalDashboard = lazy(() => import('./pages/GlobalDashboard'))
 const OutboundAPIs = lazy(() => import('./pages/OutboundAPIs'))
 const InboundAPIs = lazy(() => import('./pages/InboundAPIs'))
+const WhatsNew = lazy(() => import('./pages/WhatsNew'))
 
 function PageLoader() {
   return (
@@ -152,6 +153,14 @@ function AppRoutes() {
           <ProjectRoute>
             <Layout><Settings /></Layout>
           </ProjectRoute>
+        }
+      />
+      <Route
+        path="/whats-new"
+        element={
+          <ProtectedRoute>
+            <Layout><WhatsNew /></Layout>
+          </ProtectedRoute>
         }
       />
     </Routes>
