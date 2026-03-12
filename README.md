@@ -137,14 +137,6 @@ SID_MONITORING_TRANSPORT=queue
 
 The package automatically monitors inbound HTTP requests. For outbound monitoring, add the Guzzle middleware to your HTTP clients.
 
-### Python
-
-```bash
-pip install py-observatory
-```
-
-See `packages/python/` for configuration details.
-
 ## Project Structure
 
 ```
