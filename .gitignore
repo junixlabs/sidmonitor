@@ -57,6 +57,12 @@ backend/data/
 .worktrees/
 CLAUDE.md
 
+# Forge project management
+.forge/
+
+# Playwright MCP artifacts
+.playwright-mcp/
+
 # SidStack workspace data
 .sidstack/
 
@@ -66,6 +72,9 @@ screenshots/
 
 # Archive files
 *.zip
+
+# Test Laravel app (local testing)
+test-laravel/
 
 # Misc local/generated
 qa-test-results/

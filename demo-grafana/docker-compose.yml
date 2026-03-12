@@ -10,7 +10,7 @@ services:
       - APP_NAME=DemoApp
       - APP_ENV=local
       - APP_DEBUG=true
-      - APP_KEY=base64:ZKKUTamP82mDrLiW0c4vxYiV/VME9wyo/m+VcV8J968=
+      - APP_KEY=${APP_KEY:-base64:generate-with-php-artisan-key-generate}
       - OBSERVATORY_ENABLED=true
       - OBSERVATORY_APP_NAME=demo_app
       - OBSERVATORY_PROMETHEUS_STORAGE=apcu

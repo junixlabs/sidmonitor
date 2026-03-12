@@ -3,7 +3,7 @@ services:
     image: postgres:15-alpine
     environment:
       POSTGRES_USER: sidmonitor
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
       POSTGRES_DB: sidmonitor
     volumes:
       - postgres_preview:/var/lib/postgresql/data
@@ -45,13 +45,13 @@ services:
       HOST: 0.0.0.0
       PORT: 8000
       DEBUG: "false"
-      DATABASE_URL: postgresql+asyncpg://sidmonitor:password@postgres:5432/sidmonitor
+      DATABASE_URL: postgresql+asyncpg://sidmonitor:${POSTGRES_PASSWORD:-password}@postgres:5432/sidmonitor
       CLICKHOUSE_HOST: clickhouse
       CLICKHOUSE_PORT: 8123
       CLICKHOUSE_DATABASE: sid_monitoring
       CLICKHOUSE_USER: default
       CLICKHOUSE_PASSWORD: ""
-      JWT_SECRET_KEY: preview-secret-key
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-this-in-production}
       CORS_ORIGINS: "https://${PREVIEW_SLUG:-preview}.${BASE_DOMAIN:-preview.musetools.com}"
     labels:
       - "traefik.enable=true"
