@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: laravel-app
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: laravel-app
+  template:
+    metadata:
+      labels:
+        app: laravel-app
+      annotations:
+        observatory.scrape: "true"
+        observatory.job: "laravel-observatory"
+    spec:
+      containers:
+        - name: laravel
+          image: your-laravel-image:latest
+          env:
+            - name: OBSERVATORY_ENABLED
+              value: "true"
+            - name: LOG_CHANNEL
+              value: "stderr"
