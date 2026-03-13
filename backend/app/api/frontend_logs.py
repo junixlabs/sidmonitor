@@ -13,8 +13,8 @@ from app.models.frontend_logs import (
 
 router = APIRouter()
 
-# Log file path
-LOG_DIR = os.path.join(os.path.dirname(__file__), '..', '..', 'data')
+# Log file path — use /tmp in containers for write access
+LOG_DIR = os.environ.get('FRONTEND_LOG_DIR', os.path.join(os.path.dirname(__file__), '..', '..', 'data'))
 LOG_FILE = os.path.join(LOG_DIR, 'frontend-errors.log')
 
 

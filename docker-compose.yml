@@ -60,6 +60,7 @@ services:
       CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:-}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-change-this-in-production}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+      FRONTEND_LOG_DIR: /tmp/sidmonitor-logs
     networks:
       - sidmonitor
     restart: unless-stopped

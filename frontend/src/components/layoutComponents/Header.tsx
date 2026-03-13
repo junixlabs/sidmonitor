@@ -4,19 +4,17 @@ import { cn } from '@/lib/utils'
 import { useAuth } from '../../contexts/AuthContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useHealthAlerts } from '@/hooks/useHealthAlerts'
+import ProjectSwitcher from './ProjectSwitcher'
 import {
-  ChevronDown,
   Search,
   AlertTriangle,
   Bell,
   Moon,
   Sun,
-  Check,
   CheckCircle,
-  LayoutGrid,
-  Building,
   Settings,
   LogOut,
+  ChevronDown,
 } from 'lucide-react'
 
 interface HeaderProps {
@@ -25,16 +23,14 @@ interface HeaderProps {
 
 export default function Header({ sidebarCollapsed }: HeaderProps) {
   const navigate = useNavigate()
-  const { user, currentOrg, currentProject, projects, setCurrentProject, logout } = useAuth()
+  const { user, logout } = useAuth()
   const { resolvedTheme, toggleTheme } = useTheme()
 
   const [showUserMenu, setShowUserMenu] = useState(false)
-  const [showProjectMenu, setShowProjectMenu] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [readAlertIds, setReadAlertIds] = useState<Set<string>>(new Set())
 
   const userMenuRef = useRef<HTMLDivElement>(null)
-  const projectMenuRef = useRef<HTMLDivElement>(null)
   const notificationRef = useRef<HTMLDivElement>(null)
 
   // Close menus on outside click
@@ -42,9 +38,6 @@ export default function Header({ sidebarCollapsed }: HeaderProps) {
     function handleClickOutside(e: MouseEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
         setShowUserMenu(false)
-      }
-      if (projectMenuRef.current && !projectMenuRef.current.contains(e.target as Node)) {
-        setShowProjectMenu(false)
       }
       if (notificationRef.current && !notificationRef.current.contains(e.target as Node)) {
         setShowNotifications(false)
@@ -57,12 +50,6 @@ export default function Header({ sidebarCollapsed }: HeaderProps) {
   const handleLogout = () => {
     logout()
     navigate('/login')
-  }
-
-  const handleProjectSwitch = (project: typeof currentProject) => {
-    setCurrentProject(project)
-    setShowProjectMenu(false)
-    window.location.reload()
   }
 
   const { alerts } = useHealthAlerts()
@@ -85,112 +72,7 @@ export default function Header({ sidebarCollapsed }: HeaderProps) {
     >
       {/* Left section - Project selector */}
       <div className="flex items-center gap-4">
-        {currentOrg && currentProject && (
-          <div className="relative" ref={projectMenuRef}>
-            <button
-              onClick={() => setShowProjectMenu(!showProjectMenu)}
-              className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-colors"
-              style={{
-                backgroundColor: 'var(--bg-tertiary)',
-                color: 'var(--text-primary)',
-              }}
-            >
-              <span className="font-medium">{currentOrg.name}</span>
-              <span style={{ color: 'var(--text-muted)' }}>/</span>
-              <span className="font-medium">{currentProject.name}</span>
-              <ChevronDown
-                className={cn('w-4 h-4 transition-transform', showProjectMenu && 'rotate-180')}
-                style={{ color: 'var(--text-muted)' }}
-              />
-              {projects.length > 1 && (
-                <span
-                  className="ml-1 px-1.5 py-0.5 text-xs rounded-full font-medium"
-                  style={{
-                    backgroundColor: 'var(--accent-primary)',
-                    color: 'white',
-                  }}
-                >
-                  {projects.length}
-                </span>
-              )}
-            </button>
-
-            {showProjectMenu && (
-              <div
-                className="absolute left-0 mt-2 w-72 rounded-lg shadow-lg py-1 z-50 border"
-                style={{
-                  backgroundColor: 'var(--bg-primary)',
-                  borderColor: 'var(--border-primary)',
-                }}
-              >
-                <div
-                  className="px-4 py-2 text-xs font-semibold uppercase tracking-wider border-b"
-                  style={{
-                    color: 'var(--text-muted)',
-                    borderColor: 'var(--border-subtle)',
-                  }}
-                >
-                  Switch Project
-                </div>
-                <div className="max-h-64 overflow-y-auto py-1">
-                  {projects.map((project) => (
-                    <button
-                      key={project.id}
-                      onClick={() => handleProjectSwitch(project)}
-                      className={cn(
-                        'w-full text-left px-4 py-2.5 text-sm transition-colors',
-                        currentProject.id === project.id && 'font-medium'
-                      )}
-                      style={{
-                        backgroundColor: currentProject.id === project.id ? 'var(--bg-tertiary)' : 'transparent',
-                        color: currentProject.id === project.id ? 'var(--accent-primary)' : 'var(--text-primary)',
-                      }}
-                    >
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div>{project.name}</div>
-                          <div className="text-xs" style={{ color: 'var(--text-muted)' }}>
-                            {project.environment} • {project.platform}
-                          </div>
-                        </div>
-                        {currentProject.id === project.id && (
-                          <Check className="w-4 h-4" />
-                        )}
-                      </div>
-                    </button>
-                  ))}
-                </div>
-                <div
-                  className="border-t py-1"
-                  style={{ borderColor: 'var(--border-subtle)' }}
-                >
-                  <button
-                    onClick={() => {
-                      setShowProjectMenu(false)
-                      navigate(`/${currentOrg.slug}/projects`)
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm transition-colors flex items-center gap-2"
-                    style={{ color: 'var(--text-secondary)' }}
-                  >
-                    <LayoutGrid className="w-4 h-4" />
-                    All Projects
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowProjectMenu(false)
-                      navigate('/organizations')
-                    }}
-                    className="w-full text-left px-4 py-2 text-sm transition-colors flex items-center gap-2"
-                    style={{ color: 'var(--text-secondary)' }}
-                  >
-                    <Building className="w-4 h-4" />
-                    All Organizations
-                  </button>
-                </div>
-              </div>
-            )}
-          </div>
-        )}
+        <ProjectSwitcher />
 
         {/* Command palette trigger (placeholder) */}
         <button

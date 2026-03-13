@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
+import { useWorkspaceStore } from '@/stores/workspaceStore'
 import {
   LayoutDashboard,
   Inbox,
@@ -11,6 +12,8 @@ import {
   BarChart3,
   ChevronsLeft,
   Sparkles,
+  Building,
+  Globe,
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -19,9 +22,11 @@ interface SidebarProps {
 }
 
 interface NavItem {
-  path: string
+  /** Relative page name (e.g. 'dashboard') or absolute path (e.g. '/whats-new') */
+  page: string
   label: string
   icon: React.ReactNode
+  absolute?: boolean
 }
 
 interface NavGroup {
@@ -29,22 +34,22 @@ interface NavGroup {
   items: NavItem[]
 }
 
-const navGroups: NavGroup[] = [
+const projectNavGroups: NavGroup[] = [
   {
     label: 'Monitoring',
     items: [
       {
-        path: '/dashboard',
+        page: 'dashboard',
         label: 'Dashboard',
         icon: <LayoutDashboard className="w-5 h-5" />,
       },
       {
-        path: '/inbound-apis',
+        page: 'inbound-apis',
         label: 'Inbound APIs',
         icon: <Inbox className="w-5 h-5" />,
       },
       {
-        path: '/outbound-apis',
+        page: 'outbound-apis',
         label: 'Outbound APIs',
         icon: <ArrowRight className="w-5 h-5" />,
       },
@@ -54,12 +59,12 @@ const navGroups: NavGroup[] = [
     label: 'Operations',
     items: [
       {
-        path: '/jobs',
+        page: 'jobs',
         label: 'Jobs',
         icon: <Briefcase className="w-5 h-5" />,
       },
       {
-        path: '/scheduled-tasks',
+        page: 'scheduled-tasks',
         label: 'Scheduler',
         icon: <Clock className="w-5 h-5" />,
       },
@@ -69,14 +74,41 @@ const navGroups: NavGroup[] = [
     label: 'Settings',
     items: [
       {
-        path: '/settings',
+        page: 'settings',
         label: 'Settings',
         icon: <Settings className="w-5 h-5" />,
       },
       {
-        path: '/whats-new',
+        page: '/whats-new',
         label: "What's New",
         icon: <Sparkles className="w-5 h-5" />,
+        absolute: true,
+      },
+    ],
+  },
+]
+
+const globalNavGroups: NavGroup[] = [
+  {
+    label: 'Navigation',
+    items: [
+      {
+        page: '/',
+        label: 'Overview',
+        icon: <Globe className="w-5 h-5" />,
+        absolute: true,
+      },
+      {
+        page: '/organizations',
+        label: 'Organizations',
+        icon: <Building className="w-5 h-5" />,
+        absolute: true,
+      },
+      {
+        page: '/whats-new',
+        label: "What's New",
+        icon: <Sparkles className="w-5 h-5" />,
+        absolute: true,
       },
     ],
   },
@@ -87,10 +119,36 @@ import { SIDEBAR_STORAGE_KEY } from './constants'
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const location = useLocation()
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
+  const currentOrg = useWorkspaceStore((s) => s.currentOrg)
+  const currentProject = useWorkspaceStore((s) => s.currentProject)
+
+  const projectBase = useMemo(() => {
+    if (currentOrg && currentProject) {
+      return `/${currentOrg.slug}/${currentProject.slug}`
+    }
+    return null
+  }, [currentOrg, currentProject])
 
   useEffect(() => {
     localStorage.setItem(SIDEBAR_STORAGE_KEY, JSON.stringify(collapsed))
   }, [collapsed])
+
+  const resolveLink = (item: NavItem): string => {
+    if (item.absolute) return item.page
+    if (projectBase) return `${projectBase}/${item.page}`
+    return `/organizations` // fallback — no project selected
+  }
+
+  const isItemActive = (item: NavItem): boolean => {
+    const resolved = resolveLink(item)
+    return location.pathname === resolved || location.pathname.endsWith(`/${item.page}`)
+  }
+
+  // Show project nav only when on a project-scoped route (/:orgSlug/:projectSlug/*)
+  const globalPaths = ['/', '/organizations', '/whats-new']
+  const isGlobalPage = globalPaths.includes(location.pathname) || location.pathname.startsWith('/organizations')
+  const hasProject = !!(currentOrg && currentProject) && !isGlobalPage
+  const navGroups = hasProject ? projectNavGroups : globalNavGroups
 
   return (
     <aside
@@ -126,14 +184,15 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
             )}
             <ul className="space-y-1">
               {group.items.map((item) => {
-                const isActive = location.pathname === item.path
-                const isHovered = hoveredItem === item.path
+                const linkPath = resolveLink(item)
+                const isActive = isItemActive(item)
+                const isHovered = hoveredItem === item.page
 
                 return (
-                  <li key={item.path} className="relative">
+                  <li key={item.page} className="relative">
                     <Link
-                      to={item.path}
-                      onMouseEnter={() => setHoveredItem(item.path)}
+                      to={linkPath}
+                      onMouseEnter={() => setHoveredItem(item.page)}
                       onMouseLeave={() => setHoveredItem(null)}
                       className={cn(
                         'flex items-center gap-3 px-3 py-2.5 rounded-lg',
@@ -195,4 +254,3 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
     </aside>
   )
 }
-

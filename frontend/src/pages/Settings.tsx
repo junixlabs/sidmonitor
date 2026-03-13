@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Key, Check, AlertTriangle, Plus } from 'lucide-react'
 import { settingsApi, projectApi } from '../api/client'
-import { useAuth } from '../contexts/AuthContext'
+import { useWorkspaceStore } from '@/stores/workspaceStore'
 import { Modal } from '@/components/ui'
 import type { ProjectApiKey } from '../types'
 
@@ -14,7 +14,7 @@ export default function Settings() {
   const [keyToRevoke, setKeyToRevoke] = useState<ProjectApiKey | null>(null)
 
   const queryClient = useQueryClient()
-  const { currentProject } = useAuth()
+  const currentProject = useWorkspaceStore((s) => s.currentProject)
   const projectSlug = currentProject?.slug
 
   const { data: projectSettings, isLoading: settingsLoading } = useQuery({

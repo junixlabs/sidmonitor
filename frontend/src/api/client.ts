@@ -277,8 +277,16 @@ export const logApi = {
     return response.data
   },
 
-  getGlobalStats: async (): Promise<GlobalDashboardStats> => {
-    const response = await api.get('/stats/global')
+  getGlobalStats: async (timeRange?: string): Promise<GlobalDashboardStats> => {
+    const params: Record<string, string> = {}
+    if (timeRange) {
+      const now = new Date()
+      const hours = timeRange === '24h' ? 24 : timeRange === '7d' ? 168 : 720
+      const start = new Date(now.getTime() - hours * 3600_000)
+      params.start_date = start.toISOString()
+      params.end_date = now.toISOString()
+    }
+    const response = await api.get('/stats/global', { params })
     return response.data
   },
 

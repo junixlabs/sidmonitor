@@ -8,6 +8,7 @@ import { useStats, useTimeSeries } from '../hooks/useLogs'
 import { useInboundStats, useInboundModuleHealth } from '../hooks/useInboundLogs'
 import { useOutboundStats, useOutboundServiceHealth } from '../hooks/useOutboundLogs'
 import { useJobStats } from '../hooks/useJobs'
+import { useProjectUrl } from '../hooks/useProjectUrl'
 import { formatNumber, formatPercentage, formatResponseTime } from '../utils/format'
 
 type TimeRange = '1h' | '6h' | '24h' | '7d'
@@ -15,6 +16,7 @@ type TimeRange = '1h' | '6h' | '24h' | '7d'
 export default function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [dismissedAlert, setDismissedAlert] = useState(false)
+  const projectUrl = useProjectUrl()
 
   // Get time range from URL, default to '24h'
   const timeRange = (searchParams.get('range') as TimeRange) || '24h'
@@ -150,7 +152,7 @@ export default function Dashboard() {
       {/* Health Overview Cards */}
       <div className="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Inbound Health Card */}
-        <Link to="/inbound-apis" className="bg-surface shadow rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer">
+        <Link to={projectUrl('inbound-apis')} className="bg-surface shadow rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-medium text-text-primary flex items-center gap-2">
               <ArrowDown className="w-5 h-5 text-status-info" />
@@ -207,7 +209,7 @@ export default function Dashboard() {
         </Link>
 
         {/* Outbound Health Card */}
-        <Link to="/outbound-apis" className="bg-surface shadow rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer">
+        <Link to={projectUrl('outbound-apis')} className="bg-surface shadow rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-medium text-text-primary flex items-center gap-2">
               <ArrowUp className="w-5 h-5 text-accent" />
@@ -264,7 +266,7 @@ export default function Dashboard() {
         </Link>
 
         {/* Jobs Health Card */}
-        <Link to="/jobs" className="bg-surface shadow rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer">
+        <Link to={projectUrl('jobs')} className="bg-surface shadow rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-lg font-medium text-text-primary flex items-center gap-2">
               <RefreshCw className="w-5 h-5 text-status-warning" />

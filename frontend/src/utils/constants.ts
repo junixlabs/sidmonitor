@@ -37,8 +37,7 @@ export const CACHE_CONFIG = {
 export const STORAGE = {
   TOKEN: 'token',
   USER: 'user',
-  CURRENT_ORG: 'currentOrg',
-  CURRENT_PROJECT: 'currentProject',
+  WORKSPACE: 'sidmonitor-workspace',
   THEME_MODE: 'sidmonitor-theme-mode',
   THEME_DENSITY: 'sidmonitor-theme-density',
   SIDEBAR_COLLAPSED: 'sidebarCollapsed',

@@ -1,13 +1,19 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { useWorkspaceStore } from '@/stores/workspaceStore'
 import { orgApi, projectApi } from '../api/client'
 import { Modal, ErrorAlert } from '@/components/ui'
 import type { Organization } from '../types'
 
 export default function Organizations() {
   const navigate = useNavigate()
-  const { user, setCurrentOrg, setCurrentProject, setOrganizations, setProjects } = useAuth()
+  const { user } = useAuth()
+  const setCurrentOrg = useWorkspaceStore((s) => s.setCurrentOrg)
+  const switchProject = useWorkspaceStore((s) => s.switchProject)
+  const setOrganizations = useWorkspaceStore((s) => s.setOrganizations)
+  const setProjects = useWorkspaceStore((s) => s.setProjects)
+
   const [orgs, setOrgs] = useState<Organization[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -42,8 +48,8 @@ export default function Organizations() {
 
       if (projects.length === 1) {
         // Auto-select if only one project
-        setCurrentProject(projects[0])
-        navigate('/')
+        switchProject(projects[0])
+        navigate(`/${org.slug}/${projects[0].slug}/dashboard`)
       } else if (projects.length === 0) {
         // Redirect to create project
         navigate(`/${org.slug}/projects/new`)

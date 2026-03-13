@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import { useWorkspaceStore } from '@/stores/workspaceStore'
 import { projectApi, orgApi } from '../api/client'
 import { Modal, ErrorAlert } from '@/components/ui'
 import type { Project } from '../types'
@@ -8,7 +8,12 @@ import type { Project } from '../types'
 export default function Projects() {
   const { orgSlug } = useParams<{ orgSlug: string }>()
   const navigate = useNavigate()
-  const { currentOrg, setCurrentOrg, setCurrentProject, projects, setProjects } = useAuth()
+  const currentOrg = useWorkspaceStore((s) => s.currentOrg)
+  const setCurrentOrg = useWorkspaceStore((s) => s.setCurrentOrg)
+  const switchProject = useWorkspaceStore((s) => s.switchProject)
+  const projects = useWorkspaceStore((s) => s.projects)
+  const setProjects = useWorkspaceStore((s) => s.setProjects)
+
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -43,8 +48,9 @@ export default function Projects() {
   }
 
   const handleSelectProject = (project: Project) => {
-    setCurrentProject(project)
-    navigate('/')
+    switchProject(project)
+    const slug = currentOrg?.slug || orgSlug
+    navigate(`/${slug}/${project.slug}/dashboard`)
   }
 
   const handleCreateProject = async () => {

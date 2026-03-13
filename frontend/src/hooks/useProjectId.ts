@@ -1,6 +1,5 @@
-import { useAuth } from '@/contexts/AuthContext'
+import { useWorkspaceStore } from '@/stores/workspaceStore'
 
 export function useProjectId(): string | undefined {
-  const { currentProject } = useAuth()
-  return currentProject?.id
+  return useWorkspaceStore((s) => s.currentProject?.id)
 }

@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Folder, BarChart3, AlertTriangle, Search, ChevronRight } from 'lucide-react'
-import { useAuth } from '../contexts/AuthContext'
+import { Folder, BarChart3, AlertTriangle, Search, ChevronRight, Plus } from 'lucide-react'
+import { useWorkspaceStore } from '@/stores/workspaceStore'
 import { formatNumber, formatResponseTime } from '@/utils/format'
 import { ErrorAlert } from '@/components/ui'
 import { useGlobalStats } from '@/hooks/useLogs'
@@ -10,36 +10,19 @@ type TimeRange = '24h' | '7d' | '30d'
 
 export default function GlobalDashboard() {
   const navigate = useNavigate()
-  const { projects, setCurrentProject } = useAuth()
-  const { data: stats, isLoading: loading, error: queryError } = useGlobalStats()
+  const projects = useWorkspaceStore((s) => s.projects)
   const [searchQuery, setSearchQuery] = useState('')
   const [timeRange, setTimeRange] = useState<TimeRange>('24h')
+  const { data: stats, isLoading: loading, error: queryError } = useGlobalStats(timeRange)
+
+  const currentOrg = useWorkspaceStore((s) => s.currentOrg)
 
   const handleProjectClick = (projectId: string) => {
-    // First check if project exists in user's projects list
     const existingProject = projects.find(p => p.id === projectId)
-    if (existingProject) {
-      setCurrentProject(existingProject)
-      navigate('/dashboard')
-      return
-    }
-
-    // If not in user's list, find project info from stats and create minimal project object
-    const statsProject = stats?.projects.find(p => p.project_id === projectId)
-    if (statsProject) {
-      // Create minimal project object from stats data
-      const minimalProject = {
-        id: statsProject.project_id,
-        name: statsProject.project_name,
-        slug: statsProject.project_id, // Use ID as slug fallback
-        platform: 'unknown',
-        environment: 'production',
-        dsn: '',
-        created_at: new Date().toISOString(),
-        created_by: '',
-      }
-      setCurrentProject(minimalProject)
-      navigate('/dashboard')
+    if (existingProject && currentOrg) {
+      navigate(`/${currentOrg.slug}/${existingProject.slug}/dashboard`)
+    } else {
+      navigate('/organizations')
     }
   }
 
@@ -149,7 +132,24 @@ export default function GlobalDashboard() {
           />
         )}
 
-        {stats && (
+        {stats && stats.total_projects === 0 && (
+          <div className="bg-surface shadow rounded-lg p-12 text-center">
+            <Folder className="h-12 w-12 text-text-muted mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-text-primary mb-2">No projects yet</h2>
+            <p className="text-text-muted mb-6">
+              Create your first project and install the SDK to start monitoring.
+            </p>
+            <button
+              onClick={() => navigate(currentOrg ? `/${currentOrg.slug}/projects/new` : '/organizations')}
+              className="inline-flex items-center px-4 py-2 text-sm font-medium rounded-md text-white bg-accent hover:bg-accent-hover"
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              Create Project
+            </button>
+          </div>
+        )}
+
+        {stats && stats.total_projects > 0 && (
           <>
             {/* Aggregated Stats Cards */}
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 mb-8">

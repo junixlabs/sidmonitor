@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { logApi } from '@/api/client'
+import { queryKeys } from '@/api/queryKeys'
 import { useProjectId } from './useProjectId'
 import { CACHE_CONFIG } from '@/utils/constants'
 
@@ -23,7 +24,7 @@ export function useHealthAlerts(): HealthAlertResult {
   const projectId = useProjectId()
 
   const { data: stats, dataUpdatedAt, isLoading } = useQuery({
-    queryKey: ['stats', 'health', projectId],
+    queryKey: queryKeys.stats.health(projectId!).queryKey,
     queryFn: () => logApi.getStats(projectId),
     ...CACHE_CONFIG.standard,
     enabled: !!projectId,

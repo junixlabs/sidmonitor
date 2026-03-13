@@ -1,10 +1,12 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import { Toaster } from 'sonner'
-import { lazy, Suspense, ReactNode } from 'react'
+import { lazy, Suspense } from 'react'
 
-import { AuthProvider, useAuth } from './contexts/AuthContext'
+import { AuthProvider } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
 import Layout from './components/Layout'
+import AuthGuard from './components/guards/AuthGuard'
+import ProjectLayout from './components/layouts/ProjectLayout'
 
 // Lazy-loaded pages
 const Dashboard = lazy(() => import('./pages/Dashboard'))
@@ -29,32 +31,6 @@ function PageLoader() {
   )
 }
 
-// Protected route wrapper
-function ProtectedRoute({ children }: { children: ReactNode }) {
-  const { isAuthenticated } = useAuth()
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
-  }
-
-  return <>{children}</>
-}
-
-// Route that requires org/project context
-function ProjectRoute({ children }: { children: ReactNode }) {
-  const { isAuthenticated, currentProject } = useAuth()
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />
-  }
-
-  if (!currentProject) {
-    return <Navigate to="/organizations" replace />
-  }
-
-  return <>{children}</>
-}
-
 function AppRoutes() {
   return (
     <Suspense fallback={<PageLoader />}>
@@ -63,106 +39,26 @@ function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
 
-      {/* Protected routes - organization/project selection */}
-      <Route
-        path="/organizations"
-        element={
-          <ProtectedRoute>
-            <Layout><Organizations /></Layout>
-          </ProtectedRoute>
-        }
-      />
-      {/* Global Dashboard is default landing page */}
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <Layout><GlobalDashboard /></Layout>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/:orgSlug/projects"
-        element={
-          <ProtectedRoute>
-            <Projects />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/:orgSlug/projects/new"
-        element={
-          <ProtectedRoute>
-            <Projects />
-          </ProtectedRoute>
-        }
-      />
+      {/* Authenticated routes */}
+      <Route element={<AuthGuard />}>
+        {/* Global pages (no project context required) */}
+        <Route path="/" element={<Layout><GlobalDashboard /></Layout>} />
+        <Route path="/organizations" element={<Layout><Organizations /></Layout>} />
+        <Route path="/whats-new" element={<Layout><WhatsNew /></Layout>} />
+        <Route path="/:orgSlug/projects" element={<Projects />} />
+        <Route path="/:orgSlug/projects/new" element={<Projects />} />
 
-      {/* Protected routes - require project context */}
-      <Route
-        path="/dashboard"
-        element={
-          <ProjectRoute>
-            <Layout><Dashboard /></Layout>
-          </ProjectRoute>
-        }
-      />
-      <Route
-        path="/logs"
-        element={
-          <ProjectRoute>
-            <Layout><Logs /></Layout>
-          </ProjectRoute>
-        }
-      />
-      <Route
-        path="/inbound-apis"
-        element={
-          <ProjectRoute>
-            <Layout><InboundAPIs /></Layout>
-          </ProjectRoute>
-        }
-      />
-      <Route
-        path="/jobs"
-        element={
-          <ProjectRoute>
-            <Layout><Jobs /></Layout>
-          </ProjectRoute>
-        }
-      />
-      <Route
-        path="/scheduled-tasks"
-        element={
-          <ProjectRoute>
-            <Layout><ScheduledTasks /></Layout>
-          </ProjectRoute>
-        }
-      />
-      <Route
-        path="/outbound-apis"
-        element={
-          <ProjectRoute>
-            <Layout><OutboundAPIs /></Layout>
-          </ProjectRoute>
-        }
-      />
-      <Route
-        path="/settings"
-        element={
-          <ProjectRoute>
-            <Layout><Settings /></Layout>
-          </ProjectRoute>
-        }
-      />
-      <Route
-        path="/whats-new"
-        element={
-          <ProtectedRoute>
-            <Layout><WhatsNew /></Layout>
-          </ProtectedRoute>
-        }
-      />
+        {/* Project-scoped routes (URL-driven context) */}
+        <Route path="/:orgSlug/:projectSlug" element={<ProjectLayout />}>
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="logs" element={<Logs />} />
+          <Route path="inbound-apis" element={<InboundAPIs />} />
+          <Route path="outbound-apis" element={<OutboundAPIs />} />
+          <Route path="jobs" element={<Jobs />} />
+          <Route path="scheduled-tasks" element={<ScheduledTasks />} />
+          <Route path="settings" element={<Settings />} />
+        </Route>
+      </Route>
     </Routes>
     </Suspense>
   )

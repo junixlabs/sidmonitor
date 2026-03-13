@@ -1,7 +1,8 @@
 import { useState, FormEvent } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { authApi } from '../api/client'
+import { useWorkspaceStore } from '../stores/workspaceStore'
+import { authApi, orgApi, projectApi } from '../api/client'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -19,7 +20,34 @@ export default function Login() {
     try {
       const response = await authApi.login({ email, password })
       login(response.access_token, response.user)
-      navigate('/')
+
+      // Smart redirect: restore last project or auto-select first one
+      const { currentOrg, currentProject } = useWorkspaceStore.getState()
+      if (currentOrg && currentProject) {
+        navigate(`/${currentOrg.slug}/${currentProject.slug}/dashboard`)
+      } else {
+        // Try to auto-select first org/project
+        try {
+          const orgs = await orgApi.list()
+          if (orgs.length > 0) {
+            const org = orgs[0]
+            const projects = await projectApi.list(org.slug)
+            if (projects.length > 0) {
+              useWorkspaceStore.getState().setCurrentOrg(org)
+              useWorkspaceStore.getState().switchProject(projects[0])
+              useWorkspaceStore.getState().setProjects(projects)
+              navigate(`/${org.slug}/${projects[0].slug}/dashboard`)
+            } else {
+              useWorkspaceStore.getState().setCurrentOrg(org)
+              navigate(`/${org.slug}/projects/new`)
+            }
+          } else {
+            navigate('/organizations')
+          }
+        } catch {
+          navigate('/')
+        }
+      }
     } catch (err: unknown) {
       const axiosError = err as { response?: { status?: number; data?: { detail?: string } } }
       if (axiosError.response?.status === 401) {

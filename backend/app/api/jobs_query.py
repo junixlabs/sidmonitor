@@ -5,6 +5,7 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.auth import verify_auth
+from app.api.stats._common import safe_float
 from app.models.jobs import (
     JobClassStats,
     JobExecution,
@@ -219,7 +220,7 @@ async def get_job_stats(
                 total_executions=r[1],
                 success_count=r[2],
                 failure_count=r[3],
-                avg_duration_ms=float(r[4]) if r[4] else 0.0,
+                avg_duration_ms=safe_float(r[4]),
             )
             for r in queue_result.result_rows
         ]
@@ -250,7 +251,7 @@ async def get_job_stats(
                 total_executions=r[1],
                 success_count=r[2],
                 failure_count=r[3],
-                avg_duration_ms=float(r[4]) if r[4] else 0.0,
+                avg_duration_ms=safe_float(r[4]),
             )
             for r in class_result.result_rows
         ]
@@ -289,11 +290,11 @@ async def get_job_stats(
             pending_count=row[4],
             cancelled_count=row[5],
             timeout_count=row[6],
-            success_rate=float(row[7]) if row[7] else 0.0,
-            avg_duration_ms=float(row[8]) if row[8] else 0.0,
-            p50_duration_ms=float(row[9]) if row[9] else 0.0,
-            p95_duration_ms=float(row[10]) if row[10] else 0.0,
-            p99_duration_ms=float(row[11]) if row[11] else 0.0,
+            success_rate=safe_float(row[7]),
+            avg_duration_ms=safe_float(row[8]),
+            p50_duration_ms=safe_float(row[9]),
+            p95_duration_ms=safe_float(row[10]),
+            p99_duration_ms=safe_float(row[11]),
             by_queue=by_queue,
             by_job_class=by_job_class,
             recent_failures=recent_failures,
@@ -585,9 +586,9 @@ async def get_scheduled_task_stats(
             success_count=row[1],
             failure_count=row[2],
             missed_count=row[3],
-            success_rate=float(row[4]) if row[4] else 0.0,
-            avg_delay_ms=float(row[5]) if row[5] else 0.0,
-            avg_duration_ms=float(row[6]) if row[6] else 0.0,
+            success_rate=safe_float(row[4]),
+            avg_delay_ms=safe_float(row[5]),
+            avg_duration_ms=safe_float(row[6]),
             by_command=by_command,
             recent_failures=recent_failures,
             missed_tasks=missed_tasks,
