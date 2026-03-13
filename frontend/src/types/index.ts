@@ -16,7 +16,7 @@ export interface LogEntry {
 
 export interface StatTrend {
   value: number
-  isPositive: boolean
+  is_positive: boolean
 }
 
 export interface DashboardStats {
@@ -24,8 +24,6 @@ export interface DashboardStats {
   error_rate: number
   avg_response_time: number
   requests_per_minute: number
-  p95_response_time?: number
-  error_count?: number
   total_requests_trend?: StatTrend
   error_rate_trend?: StatTrend
   avg_response_time_trend?: StatTrend
@@ -400,6 +398,20 @@ export interface CommandHealth {
   avg_delay_ms: number
 }
 
+export interface ScheduledTaskFailure {
+  task_id: string
+  command: string
+  timestamp: string
+  error_message?: string
+}
+
+export interface MissedTask {
+  task_id: string
+  command: string
+  scheduled_at: string
+  delay_ms: number
+}
+
 export interface ScheduledTaskStats {
   total_executions: number
   success_count: number
@@ -409,7 +421,8 @@ export interface ScheduledTaskStats {
   avg_duration_ms: number
   avg_delay_ms: number
   by_command: CommandHealth[]
-  recent_failures: ScheduledTaskLog[]
+  recent_failures: ScheduledTaskFailure[]
+  missed_tasks: MissedTask[]
 }
 
 export interface ScheduledTaskFilterParams {
@@ -601,6 +614,8 @@ export interface OutboundServiceHealth {
   failure_count: number
   success_rate: number
   avg_latency_ms: number
+  p95_latency_ms: number
+  error_rate: number
 }
 
 export interface OutboundHostHealth {

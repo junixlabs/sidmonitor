@@ -123,7 +123,7 @@ export default function Dashboard() {
           loading={statsLoading}
           trend={stats?.total_requests_trend ? {
             value: stats.total_requests_trend.value,
-            isPositive: stats.total_requests_trend.isPositive
+            is_positive: stats.total_requests_trend.is_positive
           } : undefined}
         />
         <StatsCard
@@ -134,7 +134,7 @@ export default function Dashboard() {
           severity={errorRateSeverity}
           trend={stats?.error_rate_trend ? {
             value: stats.error_rate_trend.value,
-            isPositive: stats.error_rate_trend.isPositive
+            is_positive: stats.error_rate_trend.is_positive
           } : undefined}
         />
         <StatsCard
@@ -144,7 +144,7 @@ export default function Dashboard() {
           loading={statsLoading}
           trend={stats?.avg_response_time_trend ? {
             value: stats.avg_response_time_trend.value,
-            isPositive: stats.avg_response_time_trend.isPositive
+            is_positive: stats.avg_response_time_trend.is_positive
           } : undefined}
         />
         <StatsCard
@@ -154,7 +154,7 @@ export default function Dashboard() {
           loading={statsLoading}
           trend={stats?.requests_per_minute_trend ? {
             value: stats.requests_per_minute_trend.value,
-            isPositive: stats.requests_per_minute_trend.isPositive
+            is_positive: stats.requests_per_minute_trend.is_positive
           } : undefined}
         />
       </div>

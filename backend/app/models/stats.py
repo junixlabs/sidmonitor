@@ -136,8 +136,9 @@ class SlowestEndpoint(BaseModel):
     """Endpoint with the slowest average response time."""
     endpoint: str = Field(..., description="Endpoint path pattern")
     method: str = Field(..., description="HTTP method")
-    count: int = Field(..., description="Number of requests")
-    avg_time: float = Field(..., description="Average response time in milliseconds")
+    avg_response_time: float = Field(..., description="Average response time in milliseconds")
+    p95_response_time: float = Field(..., description="95th percentile response time in milliseconds")
+    request_count: int = Field(..., description="Number of requests")
 
 
 class SlowRequestsSummary(BaseModel):

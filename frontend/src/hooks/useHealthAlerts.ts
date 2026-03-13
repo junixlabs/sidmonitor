@@ -34,13 +34,15 @@ export function useHealthAlerts(): HealthAlertResult {
 
     const result: HealthAlert[] = []
 
+    const errorCount = Math.round(stats.error_rate * stats.total_requests / 100)
+
     // Critical: error rate > 10%
     if (stats.error_rate > 10) {
       result.push({
         id: 'high-error-rate',
         severity: 'critical',
         message: `Error rate at ${stats.error_rate.toFixed(1)}%`,
-        detail: `${stats.error_count ?? 0} errors out of ${stats.total_requests} requests`,
+        detail: `${errorCount} errors out of ${stats.total_requests} requests`,
       })
     }
 
@@ -50,17 +52,7 @@ export function useHealthAlerts(): HealthAlertResult {
         id: 'elevated-error-rate',
         severity: 'warning',
         message: `Elevated error rate: ${stats.error_rate.toFixed(1)}%`,
-        detail: `${stats.error_count ?? 0} errors out of ${stats.total_requests} requests`,
-      })
-    }
-
-    // Warning: slow p95 response time > 2000ms
-    if (stats.p95_response_time && stats.p95_response_time > 2000) {
-      result.push({
-        id: 'slow-p95',
-        severity: 'warning',
-        message: `P95 response time: ${stats.p95_response_time.toFixed(0)}ms`,
-        detail: 'Above 2000ms threshold',
+        detail: `${errorCount} errors out of ${stats.total_requests} requests`,
       })
     }
 

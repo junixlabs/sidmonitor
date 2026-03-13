@@ -235,12 +235,13 @@ async def get_slow_requests(
             SELECT
                 endpoint,
                 method,
-                count(*) as request_count,
-                round(avg(response_time_ms), 2) as avg_time
+                round(avg(response_time_ms), 2) as avg_response_time,
+                round(quantile(0.95)(response_time_ms), 2) as p95_response_time,
+                count(*) as request_count
             FROM logs
             {slowest_where_clause}
             GROUP BY endpoint, method
-            ORDER BY avg_time DESC
+            ORDER BY avg_response_time DESC
             LIMIT 10
         """
 
@@ -251,8 +252,9 @@ async def get_slow_requests(
             slowest_endpoints.append(SlowestEndpoint(
                 endpoint=row[0],
                 method=row[1],
-                count=row[2] or 0,
-                avg_time=safe_float(row[3])
+                avg_response_time=safe_float(row[2]),
+                p95_response_time=safe_float(row[3]),
+                request_count=row[4] or 0,
             ))
 
         return SlowRequestsSummary(
