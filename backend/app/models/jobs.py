@@ -177,6 +177,7 @@ class ScheduledTaskCommandStats(BaseModel):
     success_count: int = Field(..., description="Number of successful executions")
     failure_count: int = Field(..., description="Number of failed executions")
     missed_count: int = Field(..., description="Number of missed executions")
+    avg_duration_ms: float = Field(0.0, description="Average execution duration in milliseconds")
     avg_delay_ms: float = Field(..., description="Average delay from scheduled time in milliseconds")
 
 

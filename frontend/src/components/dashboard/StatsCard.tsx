@@ -7,7 +7,7 @@ interface StatsCardProps {
   icon?: React.ReactNode
   trend?: {
     value: number
-    isPositive: boolean
+    is_positive: boolean
   }
   color?: 'indigo' | 'red' | 'yellow' | 'green' | 'blue'
   loading?: boolean
@@ -94,10 +94,10 @@ export default function StatsCard({
                   <span
                     className={cn(
                       'ml-2 text-sm font-medium',
-                      trend.isPositive ? 'text-status-success' : 'text-status-danger'
+                      trend.is_positive ? 'text-status-success' : 'text-status-danger'
                     )}
                   >
-                    {trend.isPositive ? '+' : ''}
+                    {trend.is_positive ? '+' : ''}
                     {trend.value}%
                   </span>
                 )}

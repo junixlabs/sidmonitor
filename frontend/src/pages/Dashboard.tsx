@@ -121,10 +121,7 @@ export default function Dashboard() {
           value={formatNumber(stats?.total_requests)}
           color="indigo"
           loading={statsLoading}
-          trend={stats?.total_requests_trend ? {
-            value: stats.total_requests_trend.value,
-            isPositive: stats.total_requests_trend.isPositive
-          } : undefined}
+          trend={stats?.total_requests_trend}
         />
         <StatsCard
           title="Error Rate"
@@ -132,30 +129,21 @@ export default function Dashboard() {
           color="red"
           loading={statsLoading}
           severity={errorRateSeverity}
-          trend={stats?.error_rate_trend ? {
-            value: stats.error_rate_trend.value,
-            isPositive: stats.error_rate_trend.isPositive
-          } : undefined}
+          trend={stats?.error_rate_trend}
         />
         <StatsCard
           title="Avg Response Time"
           value={formatResponseTime(stats?.avg_response_time)}
           color="yellow"
           loading={statsLoading}
-          trend={stats?.avg_response_time_trend ? {
-            value: stats.avg_response_time_trend.value,
-            isPositive: stats.avg_response_time_trend.isPositive
-          } : undefined}
+          trend={stats?.avg_response_time_trend}
         />
         <StatsCard
           title="Requests/min"
           value={formatNumber(stats?.requests_per_minute)}
           color="green"
           loading={statsLoading}
-          trend={stats?.requests_per_minute_trend ? {
-            value: stats.requests_per_minute_trend.value,
-            isPositive: stats.requests_per_minute_trend.isPositive
-          } : undefined}
+          trend={stats?.requests_per_minute_trend}
         />
       </div>
 

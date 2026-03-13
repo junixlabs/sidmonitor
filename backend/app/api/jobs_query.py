@@ -20,6 +20,7 @@ from app.models.jobs import (
     ScheduledTaskHealthStats,
     ScheduledTaskPaginatedResponse,
 )
+from app.api.stats._common import safe_float
 from app.services.clickhouse import get_clickhouse_client
 from app.services.query_builder import WhereBuilder
 
@@ -509,6 +510,7 @@ async def get_scheduled_task_stats(
                 countIf(status = 'completed') as success_count,
                 countIf(status = 'failed') as failure_count,
                 countIf(status = 'missed') as missed_count,
+                round(avg(duration_ms), 2) as avg_duration_ms,
                 round(avg(delay_ms), 2) as avg_delay_ms
             FROM scheduled_task_logs
             WHERE {where_clause}
@@ -524,7 +526,8 @@ async def get_scheduled_task_stats(
                 success_count=r[2],
                 failure_count=r[3],
                 missed_count=r[4],
-                avg_delay_ms=float(r[5]) if r[5] else 0.0,
+                avg_duration_ms=safe_float(r[5]),
+                avg_delay_ms=safe_float(r[6]),
             )
             for r in command_result.result_rows
         ]
