@@ -30,6 +30,25 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | SidMonitor Configuration
+    |--------------------------------------------------------------------------
+    |
+    | Push-based exporter for SidMonitor platform.
+    | Set OBSERVATORY_EXPORTER=sidmonitor to enable.
+    |
+    */
+    'sidmonitor' => [
+        'endpoint' => env('SIDMONITOR_ENDPOINT', 'https://api.sidmonitor.com'),
+        'api_key' => env('SIDMONITOR_API_KEY', ''),
+
+        'batch' => [
+            'size' => env('SIDMONITOR_BATCH_SIZE', 100),
+            'interval' => env('SIDMONITOR_BATCH_INTERVAL', 10), // seconds
+        ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Logging Configuration (Loki/Grafana)
     |--------------------------------------------------------------------------
     |
