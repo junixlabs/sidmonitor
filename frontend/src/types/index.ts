@@ -697,6 +697,29 @@ export interface InboundModuleHealth {
   p95_response_time_ms: number
 }
 
+// Audit log types
+export interface AuditLogEntry {
+  id: string
+  org_id: string
+  actor_id?: string
+  actor_type: string
+  actor_name?: string
+  actor_email?: string
+  action: string
+  target_type?: string
+  target_id?: string
+  metadata?: Record<string, unknown>
+  ip_address?: string
+  created_at: string
+}
+
+export interface AuditLogListResponse {
+  items: AuditLogEntry[]
+  total: number
+  page: number
+  per_page: number
+}
+
 export interface InboundEndpointStats {
   endpoint_pattern: string  // Backend returns 'endpoint_pattern' not 'endpoint'
   method: string

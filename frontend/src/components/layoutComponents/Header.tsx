@@ -5,6 +5,7 @@ import { useAuth } from '../../contexts/AuthContext'
 import { useTheme } from '../../contexts/ThemeContext'
 import { useHealthAlerts } from '@/hooks/useHealthAlerts'
 import ProjectSwitcher from './ProjectSwitcher'
+import { useWorkspaceStore } from '@/stores/workspaceStore'
 import {
   Search,
   AlertTriangle,
@@ -12,7 +13,8 @@ import {
   Moon,
   Sun,
   CheckCircle,
-  Settings,
+  Building,
+  User,
   LogOut,
   ChevronDown,
 } from 'lucide-react'
@@ -21,14 +23,18 @@ interface HeaderProps {
   sidebarCollapsed: boolean
 }
 
+// Persists across re-mounts caused by Layout re-creating on route changes
+const persistedReadAlertIds = new Set<string>()
+
 export default function Header({ sidebarCollapsed }: HeaderProps) {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
   const { resolvedTheme, toggleTheme } = useTheme()
+  const currentOrg = useWorkspaceStore((s) => s.currentOrg)
 
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
-  const [readAlertIds, setReadAlertIds] = useState<Set<string>>(new Set())
+  const [readAlertIds, setReadAlertIds] = useState<Set<string>>(() => new Set(persistedReadAlertIds))
 
   const userMenuRef = useRef<HTMLDivElement>(null)
   const notificationRef = useRef<HTMLDivElement>(null)
@@ -46,6 +52,12 @@ export default function Header({ sidebarCollapsed }: HeaderProps) {
     document.addEventListener('mousedown', handleClickOutside)
     return () => document.removeEventListener('mousedown', handleClickOutside)
   }, [])
+
+  // Keep module-level set in sync so it survives re-mounts
+  useEffect(() => {
+    persistedReadAlertIds.clear()
+    readAlertIds.forEach((id) => persistedReadAlertIds.add(id))
+  }, [readAlertIds])
 
   const handleLogout = () => {
     logout()
@@ -269,14 +281,27 @@ export default function Header({ sidebarCollapsed }: HeaderProps) {
               <button
                 onClick={() => {
                   setShowUserMenu(false)
-                  navigate('/settings')
+                  navigate('/settings/account')
                 }}
                 className="w-full text-left px-4 py-2 text-sm transition-colors flex items-center gap-2"
                 style={{ color: 'var(--text-secondary)' }}
               >
-                <Settings className="w-4 h-4" />
-                Settings
+                <User className="w-4 h-4" />
+                User Settings
               </button>
+              {currentOrg && (
+                <button
+                  onClick={() => {
+                    setShowUserMenu(false)
+                    navigate(`/${currentOrg.slug}/settings`)
+                  }}
+                  className="w-full text-left px-4 py-2 text-sm transition-colors flex items-center gap-2"
+                  style={{ color: 'var(--text-secondary)' }}
+                >
+                  <Building className="w-4 h-4" />
+                  Org Settings
+                </button>
+              )}
               <button
                 onClick={() => {
                   setShowUserMenu(false)

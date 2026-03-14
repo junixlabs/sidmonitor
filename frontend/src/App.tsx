@@ -22,6 +22,9 @@ const GlobalDashboard = lazy(() => import('./pages/GlobalDashboard'))
 const OutboundAPIs = lazy(() => import('./pages/OutboundAPIs'))
 const InboundAPIs = lazy(() => import('./pages/InboundAPIs'))
 const WhatsNew = lazy(() => import('./pages/WhatsNew'))
+const Docs = lazy(() => import('./pages/Docs'))
+const OrgSettings = lazy(() => import('./pages/OrgSettings'))
+const UserSettings = lazy(() => import('./pages/UserSettings'))
 
 function PageLoader() {
   return (
@@ -45,6 +48,9 @@ function AppRoutes() {
         <Route path="/" element={<Layout><GlobalDashboard /></Layout>} />
         <Route path="/organizations" element={<Layout><Organizations /></Layout>} />
         <Route path="/whats-new" element={<Layout><WhatsNew /></Layout>} />
+        <Route path="/docs" element={<Layout><Docs /></Layout>} />
+        <Route path="/settings/account" element={<Layout><UserSettings /></Layout>} />
+        <Route path="/:orgSlug/settings" element={<Layout><OrgSettings /></Layout>} />
         <Route path="/:orgSlug/projects" element={<Projects />} />
         <Route path="/:orgSlug/projects/new" element={<Projects />} />
 

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 import { cn } from '@/lib/utils'
 import { useWorkspaceStore } from '@/stores/workspaceStore'
 import {
@@ -12,6 +13,7 @@ import {
 
 export default function ProjectSwitcher() {
   const navigate = useNavigate()
+  const queryClient = useQueryClient()
   const currentOrg = useWorkspaceStore((s) => s.currentOrg)
   const currentProject = useWorkspaceStore((s) => s.currentProject)
   const projects = useWorkspaceStore((s) => s.projects)
@@ -65,6 +67,18 @@ export default function ProjectSwitcher() {
 
   const handleSelect = (project: typeof currentProject) => {
     if (!project || !currentOrg) return
+
+    // Invalidate project-scoped cache to prevent stale data from previous project
+    if (currentProject && currentProject.id !== project.id) {
+      queryClient.removeQueries({
+        predicate: (query) => {
+          // Remove queries whose key contains the old project's ID
+          const key = query.queryKey
+          return Array.isArray(key) && key.some((k) => k === currentProject.id)
+        },
+      })
+    }
+
     setOpen(false)
     setSearch('')
     navigate(`/${currentOrg.slug}/${project.slug}/dashboard`)

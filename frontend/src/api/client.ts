@@ -60,6 +60,7 @@ import type {
   InboundModuleHealth,
   InboundEndpointStats,
   DsnResponse,
+  AuditLogListResponse,
 } from '../types'
 
 const api = axios.create({
@@ -175,6 +176,11 @@ export const orgApi = {
 
   removeMember: async (slug: string, memberId: string): Promise<void> => {
     await api.delete(`/organizations/${slug}/members/${memberId}`)
+  },
+
+  getAuditLogs: async (slug: string, page = 1, perPage = 50): Promise<AuditLogListResponse> => {
+    const response = await api.get(`/organizations/${slug}/audit-log`, { params: { page, per_page: perPage } })
+    return response.data
   },
 }
 

@@ -151,7 +151,7 @@ export default function Projects() {
                 placeholder="My Laravel App"
                 value={newProjectName}
                 onChange={(e) => setNewProjectName(e.target.value)}
-                className="mt-1 w-full px-3 py-2 border border-border-primary rounded-md focus:outline-none focus:ring-accent focus:border-accent"
+                className="mt-1 block w-full pl-3 pr-3 py-2 text-base border-border-primary focus:outline-none focus:ring-accent focus:border-accent sm:text-sm rounded-md border bg-surface-secondary text-text-primary"
                 autoFocus
               />
             </div>
@@ -163,7 +163,7 @@ export default function Projects() {
                 id="platform"
                 value={newProjectPlatform}
                 onChange={(e) => setNewProjectPlatform(e.target.value)}
-                className="mt-1 w-full px-3 py-2 border border-border-primary rounded-md focus:outline-none focus:ring-accent focus:border-accent"
+                className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-border-primary focus:outline-none focus:ring-accent focus:border-accent sm:text-sm rounded-md border bg-surface-secondary text-text-primary"
               >
                 <option value="laravel">Laravel</option>
                 <option value="nodejs">Node.js</option>

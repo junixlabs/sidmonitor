@@ -14,6 +14,7 @@ import {
   Sparkles,
   Building,
   Globe,
+  CircleHelp,
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -78,12 +79,6 @@ const projectNavGroups: NavGroup[] = [
         label: 'Settings',
         icon: <Settings className="w-5 h-5" />,
       },
-      {
-        page: '/whats-new',
-        label: "What's New",
-        icon: <Sparkles className="w-5 h-5" />,
-        absolute: true,
-      },
     ],
   },
 ]
@@ -104,17 +99,82 @@ const globalNavGroups: NavGroup[] = [
         icon: <Building className="w-5 h-5" />,
         absolute: true,
       },
-      {
-        page: '/whats-new',
-        label: "What's New",
-        icon: <Sparkles className="w-5 h-5" />,
-        absolute: true,
-      },
     ],
   },
 ]
 
 import { SIDEBAR_STORAGE_KEY } from './constants'
+
+const bottomItems: NavItem[] = [
+  {
+    page: '/whats-new',
+    label: "What's New",
+    icon: <Sparkles className="w-5 h-5" />,
+    absolute: true,
+  },
+  {
+    page: '/docs',
+    label: 'Help & Docs',
+    icon: <CircleHelp className="w-5 h-5" />,
+    absolute: true,
+  },
+]
+
+const globalPaths = ['/', '/organizations', '/whats-new', '/docs', '/settings/account']
+const orgSettingsPattern = /^\/[^/]+\/settings$/
+
+function NavItemLink({
+  item,
+  linkPath,
+  isActive,
+  collapsed,
+  hoveredItem,
+  setHoveredItem,
+  py = 'py-2.5',
+}: {
+  item: NavItem
+  linkPath: string
+  isActive: boolean
+  collapsed: boolean
+  hoveredItem: string | null
+  setHoveredItem: (v: string | null) => void
+  py?: string
+}) {
+  const isHovered = hoveredItem === item.page
+  return (
+    <li className="relative">
+      <Link
+        to={linkPath}
+        onMouseEnter={() => setHoveredItem(item.page)}
+        onMouseLeave={() => setHoveredItem(null)}
+        className={cn(
+          `flex items-center gap-3 px-3 ${py} rounded-lg`,
+          'transition-colors duration-150',
+          isActive
+            ? 'bg-sidebar-active text-white'
+            : isHovered
+            ? 'bg-sidebar-hover text-white'
+            : 'text-sidebar-muted',
+          collapsed && 'justify-center'
+        )}
+        title={collapsed ? item.label : undefined}
+      >
+        <span className="flex-shrink-0">{item.icon}</span>
+        {!collapsed && (
+          <span className="text-sm font-medium whitespace-nowrap">
+            {item.label}
+          </span>
+        )}
+      </Link>
+
+      {collapsed && isHovered && (
+        <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap z-50 bg-sidebar-hover text-sidebar-text">
+          {item.label}
+        </div>
+      )}
+    </li>
+  )
+}
 
 export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   const location = useLocation()
@@ -145,8 +205,7 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
   }
 
   // Show project nav only when on a project-scoped route (/:orgSlug/:projectSlug/*)
-  const globalPaths = ['/', '/organizations', '/whats-new']
-  const isGlobalPage = globalPaths.includes(location.pathname) || location.pathname.startsWith('/organizations')
+  const isGlobalPage = globalPaths.includes(location.pathname) || location.pathname.startsWith('/organizations') || orgSettingsPattern.test(location.pathname)
   const hasProject = !!(currentOrg && currentProject) && !isGlobalPage
   const navGroups = hasProject ? projectNavGroups : globalNavGroups
 
@@ -183,50 +242,39 @@ export default function Sidebar({ collapsed, onToggle }: SidebarProps) {
               </h3>
             )}
             <ul className="space-y-1">
-              {group.items.map((item) => {
-                const linkPath = resolveLink(item)
-                const isActive = isItemActive(item)
-                const isHovered = hoveredItem === item.page
-
-                return (
-                  <li key={item.page} className="relative">
-                    <Link
-                      to={linkPath}
-                      onMouseEnter={() => setHoveredItem(item.page)}
-                      onMouseLeave={() => setHoveredItem(null)}
-                      className={cn(
-                        'flex items-center gap-3 px-3 py-2.5 rounded-lg',
-                        'transition-colors duration-150',
-                        isActive
-                          ? 'bg-sidebar-active text-white'
-                          : isHovered
-                          ? 'bg-sidebar-hover text-white'
-                          : 'text-sidebar-muted',
-                        collapsed && 'justify-center'
-                      )}
-                      title={collapsed ? item.label : undefined}
-                    >
-                      <span className="flex-shrink-0">{item.icon}</span>
-                      {!collapsed && (
-                        <span className="text-sm font-medium whitespace-nowrap">
-                          {item.label}
-                        </span>
-                      )}
-                    </Link>
-
-                    {/* Tooltip for collapsed state */}
-                    {collapsed && isHovered && (
-                      <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-3 py-1.5 rounded-md text-sm font-medium whitespace-nowrap z-50 bg-sidebar-hover text-sidebar-text">
-                        {item.label}
-                      </div>
-                    )}
-                  </li>
-                )
-              })}
+              {group.items.map((item) => (
+                <NavItemLink
+                  key={item.page}
+                  item={item}
+                  linkPath={resolveLink(item)}
+                  isActive={isItemActive(item)}
+                  collapsed={collapsed}
+                  hoveredItem={hoveredItem}
+                  setHoveredItem={setHoveredItem}
+                />
+              ))}
             </ul>
           </div>
         ))}
       </nav>
+
+      {/* Pinned bottom links */}
+      <div className="px-2 pb-1">
+        <ul className="space-y-1">
+          {bottomItems.map((item) => (
+            <NavItemLink
+              key={item.page}
+              item={item}
+              linkPath={resolveLink(item)}
+              isActive={isItemActive(item)}
+              collapsed={collapsed}
+              hoveredItem={hoveredItem}
+              setHoveredItem={setHoveredItem}
+              py="py-2"
+            />
+          ))}
+        </ul>
+      </div>
 
       {/* Collapse toggle button */}
       <div className="p-2 border-t border-sidebar-muted/20">

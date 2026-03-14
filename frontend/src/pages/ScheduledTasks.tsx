@@ -184,7 +184,7 @@ export default function ScheduledTasks() {
                 <select
                   value={filters.status || ''}
                   onChange={(e) => handleFilterChange('status', e.target.value)}
-                  className="block w-full rounded-md border-border-primary shadow-sm focus:border-accent focus:ring-accent sm:text-sm"
+                  className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-border-primary focus:outline-none focus:ring-accent focus:border-accent sm:text-sm rounded-md border bg-surface-secondary text-text-primary"
                 >
                   <option value="">All Statuses</option>
                   <option value="scheduled">Scheduled</option>
@@ -201,7 +201,7 @@ export default function ScheduledTasks() {
                   type="date"
                   value={filters.start_date || ''}
                   onChange={(e) => handleFilterChange('start_date', e.target.value)}
-                  className="block w-full rounded-md border-border-primary shadow-sm focus:border-accent focus:ring-accent sm:text-sm"
+                  className="mt-1 block w-full pl-3 pr-3 py-2 text-base border-border-primary focus:outline-none focus:ring-accent focus:border-accent sm:text-sm rounded-md border bg-surface-secondary text-text-primary"
                 />
               </div>
               <div>
@@ -210,7 +210,7 @@ export default function ScheduledTasks() {
                   type="date"
                   value={filters.end_date || ''}
                   onChange={(e) => handleFilterChange('end_date', e.target.value)}
-                  className="block w-full rounded-md border-border-primary shadow-sm focus:border-accent focus:ring-accent sm:text-sm"
+                  className="mt-1 block w-full pl-3 pr-3 py-2 text-base border-border-primary focus:outline-none focus:ring-accent focus:border-accent sm:text-sm rounded-md border bg-surface-secondary text-text-primary"
                 />
               </div>
             </div>
