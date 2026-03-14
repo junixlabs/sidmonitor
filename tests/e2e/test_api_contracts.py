@@ -1038,7 +1038,7 @@ class TestProjectEndpoints:
     def test_create_api_key(self, mock_proj, mock_access, mock_create, client):
         mock_proj.return_value = MockProject()
         mock_access.return_value = True
-        mock_create.return_value = (MockApiKey(), "sk_test_full_key_value_12345")
+        mock_create.return_value = (MockApiKey(), "smk_test_full_key_value_12345")
         r = client.post("/api/projects/test-project/api-keys", json={
             "name": "Production Key",
             "scopes": ["ingest"],

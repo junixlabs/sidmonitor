@@ -4,7 +4,9 @@ Project service for project management and API key generation.
 import hashlib
 import re
 import secrets
+import time
 import uuid
+from datetime import datetime
 from typing import Optional, Tuple
 
 from fastapi import HTTPException, status
@@ -12,10 +14,14 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
-from app.models.database import ApiKey, Project
+from app.models.database import ApiKey, OrganizationMember, Project, User
 from app.models.project import ApiKeyCreate, ProjectCreate, ProjectUpdate
 
 settings = get_settings()
+
+# Debounce last_used_at updates: key_hash -> last update timestamp
+_last_used_at_cache: dict[str, float] = {}
+_LAST_USED_AT_INTERVAL = 60  # seconds
 
 
 def generate_project_slug(name: str) -> str:
@@ -56,18 +62,18 @@ def generate_api_key() -> Tuple[str, str, str]:
 
     Returns:
         Tuple of (full_key, key_prefix, key_hash)
-        - full_key: Complete API key to return to user (sk_live_<32-char-hex>)
-        - key_prefix: First 8 chars after prefix for display (sk_live_abc123...)
+        - full_key: Complete API key to return to user (smk_<32-char-hex>)
+        - key_prefix: First 8 chars after prefix for display (smk_abc123...)
         - key_hash: SHA256 hash for storage
     """
     # Generate random 32-character hex string
     random_part = secrets.token_hex(16)
 
     # Build full key with prefix
-    full_key = f"sk_live_{random_part}"
+    full_key = f"smk_{random_part}"
 
     # Extract prefix (first 8 chars of random part)
-    key_prefix = f"sk_live_{random_part[:8]}"
+    key_prefix = f"smk_{random_part[:8]}"
 
     # Hash the full key for storage
     key_hash = hashlib.sha256(full_key.encode()).hexdigest()
@@ -158,13 +164,14 @@ async def create_project(
     return project
 
 
-async def get_project_by_slug(slug: str, db: AsyncSession) -> Project:
+async def get_project_by_slug(slug: str, db: AsyncSession, user: Optional[User] = None) -> Project:
     """
-    Get project by slug.
+    Get project by slug, scoped to user's organizations.
 
     Args:
         slug: Project slug
         db: Database session
+        user: Current user (used to scope by organization membership)
 
     Returns:
         Project
@@ -172,9 +179,16 @@ async def get_project_by_slug(slug: str, db: AsyncSession) -> Project:
     Raises:
         HTTPException: If project not found
     """
-    result = await db.execute(
-        select(Project).where(Project.slug == slug)
-    )
+    query = select(Project).where(Project.slug == slug)
+
+    if user is not None:
+        query = query.join(
+            OrganizationMember,
+            (OrganizationMember.organization_id == Project.organization_id)
+            & (OrganizationMember.user_id == user.id)
+        )
+
+    result = await db.execute(query)
     project = result.scalar_one_or_none()
 
     if not project:
@@ -289,6 +303,21 @@ async def verify_api_key(key: str, db: AsyncSession) -> Optional[Project]:
     Returns:
         Project if key is valid and not revoked, None otherwise
     """
+    project, _ = await verify_api_key_full(key, db)
+    return project
+
+
+async def verify_api_key_full(key: str, db: AsyncSession) -> Tuple[Optional[Project], Optional[ApiKey]]:
+    """
+    Verify API key and return both the project and API key record.
+
+    Args:
+        key: Full API key string
+        db: Database session
+
+    Returns:
+        Tuple of (Project, ApiKey) if key is valid and not revoked, (None, None) otherwise
+    """
     # Hash the provided key
     key_hash = hash_api_key(key)
 
@@ -302,12 +331,14 @@ async def verify_api_key(key: str, db: AsyncSession) -> Optional[Project]:
     api_key = result.scalar_one_or_none()
 
     if not api_key:
-        return None
+        return None, None
 
-    # Update last_used_at
-    from datetime import datetime
-    api_key.last_used_at = datetime.utcnow()
-    await db.flush()
+    # Debounce last_used_at — only flush to DB once per interval
+    now = time.monotonic()
+    if now - _last_used_at_cache.get(key_hash, 0) >= _LAST_USED_AT_INTERVAL:
+        api_key.last_used_at = datetime.utcnow()
+        await db.flush()
+        _last_used_at_cache[key_hash] = now
 
     # Get and return project
     result = await db.execute(
@@ -315,7 +346,7 @@ async def verify_api_key(key: str, db: AsyncSession) -> Optional[Project]:
     )
     project = result.scalar_one_or_none()
 
-    return project
+    return project, api_key
 
 
 async def revoke_api_key(api_key: ApiKey, db: AsyncSession) -> None:
@@ -326,7 +357,6 @@ async def revoke_api_key(api_key: ApiKey, db: AsyncSession) -> None:
         api_key: API key to revoke
         db: Database session
     """
-    from datetime import datetime
     api_key.revoked_at = datetime.utcnow()
     await db.flush()
 

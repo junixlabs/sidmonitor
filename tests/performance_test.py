@@ -180,7 +180,7 @@ def test_ingest_api_throughput(requests_count: int = 1000, concurrency: int = 10
                 json=payload,
                 headers={
                     "Content-Type": "application/json",
-                    "X-API-Key": f"sk_live_{TEST_PROJECT_ID}"
+                    "X-API-Key": f"smk_{TEST_PROJECT_ID}"
                 },
                 timeout=10
             )

@@ -3,9 +3,17 @@ Pydantic models for project request/response schemas.
 """
 import uuid
 from datetime import datetime
+from enum import Enum
 from typing import List, Optional
 
 from pydantic import BaseModel, Field
+
+
+class ProjectRole(str, Enum):
+    """Project member role enum."""
+    admin = "admin"
+    member = "member"
+    viewer = "viewer"
 
 
 class ProjectCreate(BaseModel):
@@ -45,7 +53,7 @@ class ProjectListResponse(BaseModel):
 class ApiKeyCreate(BaseModel):
     """Schema for API key creation request."""
     name: str = Field(..., min_length=1, max_length=255, description="API key name/description")
-    scopes: List[str] = Field(default=["ingest"], description="API key scopes")
+    scopes: List[str] = Field(default=["ingest:write"], description="API key scopes (ingest:write, data:read, settings:read, settings:write)")
 
 
 class ApiKeyResponse(BaseModel):
@@ -83,3 +91,30 @@ class ApiKeyListResponse(BaseModel):
 class DsnResponse(BaseModel):
     """Schema for DSN response."""
     dsn: str = Field(..., description="Data Source Name URL for SDK configuration")
+
+
+class ProjectMemberCreate(BaseModel):
+    """Schema for adding a member to a project."""
+    email: str = Field(..., description="Email of the user to add")
+    role: ProjectRole = Field(default=ProjectRole.member, description="Role: admin, member, viewer")
+
+    class Config:
+        use_enum_values = True
+
+
+class ProjectMemberUpdate(BaseModel):
+    """Schema for updating a project member's role."""
+    role: ProjectRole = Field(..., description="New role: admin, member, viewer")
+
+    class Config:
+        use_enum_values = True
+
+
+class ProjectMemberResponse(BaseModel):
+    """Schema for project member response."""
+    id: uuid.UUID
+    user_id: uuid.UUID
+    user_name: Optional[str] = None
+    user_email: Optional[str] = None
+    role: str
+

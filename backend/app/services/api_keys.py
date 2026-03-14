@@ -68,10 +68,10 @@ def _generate_api_key() -> tuple[str, str]:
     """Generate a new API key and return (full_key, prefix)."""
     # Generate a 32-byte random key and encode as hex (64 chars)
     raw_key = secrets.token_hex(32)
-    # Format: sk_live_<random>
-    full_key = f"sk_live_{raw_key}"
-    # Prefix for display: sk_live_<first 8 chars>...
-    prefix = f"sk_live_{raw_key[:8]}..."
+    # Format: smk_<random>
+    full_key = f"smk_{raw_key}"
+    # Prefix for display: smk_<first 8 chars>...
+    prefix = f"smk_{raw_key[:8]}..."
     return full_key, prefix
 
 

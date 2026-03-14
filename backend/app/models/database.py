@@ -146,12 +146,14 @@ class ApiKey(Base):
     id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False)
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    key_prefix: Mapped[str] = mapped_column(String(20), nullable=False)  # sk_live_ + first 8 chars
+    key_prefix: Mapped[str] = mapped_column(String(20), nullable=False)  # smk_ + first 8 chars
     key_hash: Mapped[str] = mapped_column(String(255), nullable=False)  # Hashed full key
-    scopes: Mapped[list] = mapped_column(JSON, default=list, nullable=False)  # ["ingest", "read", "admin"]
+    scopes: Mapped[list] = mapped_column(JSON, default=list, nullable=False)  # ["ingest:write", "data:read", "settings:read", "settings:write"]
     created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     last_used_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    rotated_from: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("api_keys.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
     # Relationships
@@ -192,3 +194,31 @@ class Invitation(Base):
 
     def __repr__(self) -> str:
         return f"<Invitation(id={self.id}, email={self.email}, org={self.organization_id})>"
+
+
+class AuditLog(Base):
+    """Audit log for tracking mutations across the platform."""
+    __tablename__ = "audit_logs"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="CASCADE"), nullable=False)
+    actor_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    actor_type: Mapped[str] = mapped_column(String(20), default="user", nullable=False)  # user, api_key, system
+    action: Mapped[str] = mapped_column(String(100), nullable=False)  # e.g. project.create, api_key.revoke
+    target_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # project, api_key, member
+    target_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
+    metadata: Mapped[Optional[dict]] = mapped_column(JSON, default=dict, nullable=True)
+    ip_address: Mapped[Optional[str]] = mapped_column(String(45), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+
+    # Relationships
+    organization: Mapped["Organization"] = relationship("Organization")
+    actor: Mapped[Optional["User"]] = relationship("User")
+
+    __table_args__ = (
+        Index("idx_audit_org_time", "org_id", "created_at"),
+        Index("idx_audit_actor", "actor_id", "created_at"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<AuditLog(id={self.id}, action={self.action})>"

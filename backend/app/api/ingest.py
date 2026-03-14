@@ -2,6 +2,7 @@
 
 import logging
 import secrets
+from datetime import datetime
 from typing import Optional, Union
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
@@ -34,10 +35,26 @@ async def verify_api_key_and_get_project(
     x_api_key: str = Header(..., alias="X-API-Key"),
     db: AsyncSession = Depends(get_db)
 ) -> Project:
-    """Verify API key and return the associated project."""
+    """Verify API key and return the associated project.
+
+    Checks expiration and revocation status. Updates last_used_at.
+    """
     # Try PostgreSQL-stored keys (multi-tenant system)
-    project = await projects_service.verify_api_key(x_api_key, db)
-    if project:
+    project, api_key = await projects_service.verify_api_key_full(x_api_key, db)
+    if project and api_key:
+        # Check expiration
+        if api_key.expires_at and api_key.expires_at < datetime.utcnow():
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="API key expired",
+            )
+        # Check scope — all ingest endpoints require ingest:write
+        # Legacy keys with ["ingest"] are also accepted for backward compatibility
+        if not _has_ingest_scope(api_key.scopes):
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="API key missing required scope: ingest:write",
+            )
         return project
 
     # Fallback: SQLite-stored keys
@@ -54,6 +71,11 @@ async def verify_api_key_and_get_project(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Invalid API key",
     )
+
+
+def _has_ingest_scope(scopes: list) -> bool:
+    """Check if scopes include ingest permission (supports legacy 'ingest' and new 'ingest:write')."""
+    return "ingest:write" in scopes or "ingest" in scopes
 
 
 @router.post("/ingest", response_model=IngestResponse)

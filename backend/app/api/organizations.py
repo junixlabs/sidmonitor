@@ -1,13 +1,14 @@
 """
 Organization API endpoints for managing organizations and memberships.
 """
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import get_current_user
 from app.database import get_db
 from app.models.database import User
+from app.models.audit import AuditLogListResponse, AuditLogResponse
 from app.models.organization import (
     InviteMemberRequest,
     MemberRole,
@@ -28,6 +29,7 @@ from app.services.organizations import (
     remove_member,
     update_member_role,
 )
+from app.services.audit_service import enrich_audit_logs, get_audit_logs
 
 router = APIRouter()
 
@@ -359,3 +361,46 @@ async def remove_member_from_organization(
     await remove_member(db, organization.id, member_id)
 
     return None
+
+
+@router.get("/organizations/{slug}/audit-log", response_model=AuditLogListResponse)
+async def list_audit_logs(
+    slug: str,
+    page: int = Query(default=1, ge=1),
+    per_page: int = Query(default=50, ge=1, le=100),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """
+    Get paginated audit log for an organization.
+
+    Requires admin or owner role.
+    """
+    organization = await get_organization_by_slug(db, slug)
+
+    if not organization:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Organization not found",
+        )
+
+    # Check admin+ permission
+    has_permission = await check_organization_permission(
+        db, current_user.id, organization.id, MemberRole.admin
+    )
+
+    if not has_permission:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions to view audit log",
+        )
+
+    entries, total = await get_audit_logs(db, organization.id, page, per_page)
+    enriched = await enrich_audit_logs(db, entries)
+
+    return AuditLogListResponse(
+        items=[AuditLogResponse(**item) for item in enriched],
+        total=total,
+        page=page,
+        per_page=per_page,
+    )
