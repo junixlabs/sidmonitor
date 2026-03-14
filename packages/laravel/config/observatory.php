@@ -40,11 +40,27 @@ return [
     'sidmonitor' => [
         'endpoint' => env('SIDMONITOR_ENDPOINT', 'https://api.sidmonitor.com'),
         'api_key' => env('SIDMONITOR_API_KEY', ''),
+        'timeout' => env('SIDMONITOR_TIMEOUT', 5), // seconds
 
         'batch' => [
             'size' => env('SIDMONITOR_BATCH_SIZE', 100),
             'interval' => env('SIDMONITOR_BATCH_INTERVAL', 10), // seconds
+            'max_buffer_size' => env('SIDMONITOR_MAX_BUFFER_SIZE', 1000),
         ],
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Circuit Breaker
+    |--------------------------------------------------------------------------
+    |
+    | After N consecutive flush failures, stop sending for M seconds
+    | to avoid blocking requests when SidMonitor backend is down.
+    |
+    */
+    'circuit_breaker' => [
+        'threshold' => env('SIDMONITOR_CIRCUIT_BREAKER_THRESHOLD', 3),
+        'cooldown' => env('SIDMONITOR_CIRCUIT_BREAKER_COOLDOWN', 30), // seconds
     ],
 
     /*
@@ -166,6 +182,27 @@ return [
 
         // Log job payload (disabled by default - can be large)
         'log_payload' => env('OBSERVATORY_JOB_LOG_PAYLOAD', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Scheduled Task Logging
+    |--------------------------------------------------------------------------
+    */
+    'scheduled_tasks' => [
+        'enabled' => env('OBSERVATORY_SCHEDULED_TASKS_ENABLED', true),
+
+        // Commands to exclude (supports wildcards)
+        'exclude_commands' => [
+            // 'schedule:run',
+        ],
+
+        // Only log slow tasks (0 = log all)
+        'slow_threshold_ms' => env('OBSERVATORY_TASK_SLOW_THRESHOLD_MS', 0),
+
+        // Capture task output
+        'log_output' => env('OBSERVATORY_TASK_LOG_OUTPUT', false),
+        'max_output_size' => 4096,
     ],
 
     /*

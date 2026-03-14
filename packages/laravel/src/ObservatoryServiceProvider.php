@@ -14,6 +14,7 @@ use Illuminate\Support\ServiceProvider;
 use JunixLabs\Observatory\Collectors\InboundCollector;
 use JunixLabs\Observatory\Collectors\JobCollector;
 use JunixLabs\Observatory\Collectors\OutboundCollector;
+use JunixLabs\Observatory\Collectors\ScheduledTaskCollector;
 use JunixLabs\Observatory\Contracts\ExporterInterface;
 use JunixLabs\Observatory\Exporters\PrometheusExporter;
 use JunixLabs\Observatory\Exporters\SidMonitorExporter;
@@ -22,6 +23,7 @@ use JunixLabs\Observatory\Loggers\ExceptionLogger;
 use JunixLabs\Observatory\Loggers\InboundRequestLogger;
 use JunixLabs\Observatory\Loggers\JobLogger;
 use JunixLabs\Observatory\Loggers\OutboundRequestLogger;
+use JunixLabs\Observatory\Loggers\ScheduledTaskLogger;
 use JunixLabs\Observatory\Middleware\ObserveRequests;
 use JunixLabs\Observatory\Middleware\RequestIdMiddleware;
 use JunixLabs\Observatory\Support\SensitiveDataMasker;
@@ -42,6 +44,12 @@ class ObservatoryServiceProvider extends ServiceProvider
             return new JobCollector(
                 $app->make(ExporterInterface::class),
                 $app->make(JobLogger::class)
+            );
+        });
+        $this->app->singleton(ScheduledTaskCollector::class, function ($app) {
+            return new ScheduledTaskCollector(
+                $app->make(ExporterInterface::class),
+                $app->make(ScheduledTaskLogger::class)
             );
         });
 
@@ -75,6 +83,11 @@ class ObservatoryServiceProvider extends ServiceProvider
             return new JobLogger($app->make(SensitiveDataMasker::class));
         });
 
+        // Register scheduled task logger
+        $this->app->singleton(ScheduledTaskLogger::class, function ($app) {
+            return new ScheduledTaskLogger($app->make(SensitiveDataMasker::class));
+        });
+
         // Register exception logger
         $this->app->singleton(ExceptionLogger::class, function ($app) {
             return new ExceptionLogger($app->make(SensitiveDataMasker::class));
@@ -100,7 +113,9 @@ class ObservatoryServiceProvider extends ServiceProvider
         $this->registerRoutes();
         $this->registerHttpMacros();
         $this->registerJobListeners();
+        $this->registerScheduledTaskListeners();
         $this->registerExceptionHandler();
+        $this->registerShutdownHook();
     }
 
     protected function registerMiddleware(): void
@@ -142,15 +157,97 @@ class ObservatoryServiceProvider extends ServiceProvider
             return Http::withMiddleware($collector->getGuzzleMiddleware());
         });
 
-        // Auto-observe all HTTP requests (Laravel 10.14+ only)
-        // Laravel 9 doesn't have globalMiddleware, use Http::withObservatory() instead
+        // Auto-observe all HTTP requests
+        // Laravel 10.14+: use globalMiddleware (Guzzle-level, captures all requests)
+        // Laravel 8-10.13: fallback to HTTP client events (captures Http facade calls only)
         try {
             $factory = Http::getFacadeRoot();
             if ($factory && method_exists($factory, 'globalMiddleware')) {
                 Http::globalMiddleware($collector->getGuzzleMiddleware());
+
+                return;
             }
-        } catch (\Throwable $e) {
-            // Silently ignore - Laravel 9 users should use Http::withObservatory()
+        } catch (\Throwable) {
+            // Fall through to event-based approach
+        }
+
+        // Fallback: use Laravel HTTP client events (available since Laravel 8.x)
+        $this->registerOutboundEventListeners($collector);
+    }
+
+    /**
+     * Fallback outbound monitoring via Laravel HTTP client events.
+     * Works on Laravel 8.x+ where globalMiddleware is not available.
+     */
+    protected function registerOutboundEventListeners(OutboundCollector $collector): void
+    {
+        // Track pending request start times keyed by object ID to avoid URL collisions
+        $pendingTimings = [];
+
+        if (class_exists(\Illuminate\Http\Client\Events\RequestSending::class)) {
+            Event::listen(\Illuminate\Http\Client\Events\RequestSending::class, function ($event) use (&$pendingTimings) {
+                $key = spl_object_id($event->request);
+                $pendingTimings[$key] = microtime(true);
+
+                // Evict stale entries (>5 min) to prevent memory leaks in long-running processes
+                if (count($pendingTimings) > 100) {
+                    $cutoff = microtime(true) - 300;
+                    $pendingTimings = array_filter($pendingTimings, fn ($t) => $t > $cutoff);
+                }
+            });
+        }
+
+        if (class_exists(\Illuminate\Http\Client\Events\ResponseReceived::class)) {
+            Event::listen(\Illuminate\Http\Client\Events\ResponseReceived::class, function ($event) use ($collector, &$pendingTimings) {
+                $url = (string) $event->request->url();
+                $host = parse_url($url, PHP_URL_HOST) ?: '';
+
+                $key = spl_object_id($event->request);
+
+                if (! $collector->shouldMonitor($host)) {
+                    unset($pendingTimings[$key]);
+
+                    return;
+                }
+
+                $startTime = $pendingTimings[$key] ?? microtime(true);
+                unset($pendingTimings[$key]);
+
+                $collector->recordFromEvent(
+                    $event->request->method(),
+                    $url,
+                    $event->response->status(),
+                    microtime(true) - $startTime
+                );
+            });
+        }
+
+        if (class_exists(\Illuminate\Http\Client\Events\ConnectionFailed::class)) {
+            Event::listen(\Illuminate\Http\Client\Events\ConnectionFailed::class, function ($event) use ($collector, &$pendingTimings) {
+                $url = (string) $event->request->url();
+                $host = parse_url($url, PHP_URL_HOST) ?: '';
+
+                $key = spl_object_id($event->request);
+
+                if (! $collector->shouldMonitor($host)) {
+                    unset($pendingTimings[$key]);
+
+                    return;
+                }
+
+                $startTime = $pendingTimings[$key] ?? microtime(true);
+                unset($pendingTimings[$key]);
+
+                $collector->recordFromEvent(
+                    $event->request->method(),
+                    $url,
+                    0,
+                    microtime(true) - $startTime,
+                    null,
+                    null,
+                    'Connection failed'
+                );
+            });
         }
     }
 
@@ -172,6 +269,37 @@ class ObservatoryServiceProvider extends ServiceProvider
 
         Event::listen(JobFailed::class, function (JobFailed $event) use ($collector) {
             $collector->end($event->job, 'failed', $event->exception);
+        });
+    }
+
+    protected function registerScheduledTaskListeners(): void
+    {
+        if (! config('observatory.scheduled_tasks.enabled', true)) {
+            return;
+        }
+
+        // Guard: ScheduledTaskStarting was added in Laravel 6.x, ScheduledTaskFailed in 7.x
+        // Safe to use on Laravel 9+, class_exists guard kept for edge cases
+        if (! class_exists(\Illuminate\Console\Events\ScheduledTaskStarting::class)) {
+            return;
+        }
+
+        $collector = $this->app->make(ScheduledTaskCollector::class);
+
+        Event::listen(\Illuminate\Console\Events\ScheduledTaskStarting::class, function ($event) use ($collector) {
+            $collector->start($event->task);
+        });
+
+        Event::listen(\Illuminate\Console\Events\ScheduledTaskFinished::class, function ($event) use ($collector) {
+            $collector->end($event->task, 'completed');
+        });
+
+        Event::listen(\Illuminate\Console\Events\ScheduledTaskFailed::class, function ($event) use ($collector) {
+            $collector->end($event->task, 'failed', $event->exception);
+        });
+
+        Event::listen(\Illuminate\Console\Events\ScheduledTaskSkipped::class, function ($event) use ($collector) {
+            $collector->skip($event->task);
         });
     }
 
@@ -203,15 +331,22 @@ class ObservatoryServiceProvider extends ServiceProvider
 
                 public function report(\Throwable $e): void
                 {
-                    // Log to Observatory
-                    $this->logger->log($e);
-
-                    // Record metric
-                    if (config('observatory.exceptions.enabled', true)) {
-                        $this->exporter->recordException($e);
+                    // Log to Observatory — wrapped to never suppress the original exception
+                    try {
+                        $this->logger->log($e);
+                    } catch (\Throwable) {
+                        // Observatory logging must never prevent error reporting
                     }
 
-                    // Call original handler
+                    try {
+                        if (config('observatory.exceptions.enabled', true)) {
+                            $this->exporter->recordException($e);
+                        }
+                    } catch (\Throwable) {
+                        // Observatory metrics must never prevent error reporting
+                    }
+
+                    // Always call original handler
                     $this->handler->report($e);
                 }
 
@@ -230,6 +365,18 @@ class ObservatoryServiceProvider extends ServiceProvider
                     $this->handler->renderForConsole($output, $e);
                 }
             };
+        });
+    }
+
+    protected function registerShutdownHook(): void
+    {
+        // Flush buffer when Laravel terminates (after response is sent)
+        $this->app->terminating(function () {
+            try {
+                $this->app->make(ExporterInterface::class)->flush();
+            } catch (\Throwable) {
+                // Never fail during shutdown
+            }
         });
     }
 

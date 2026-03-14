@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Facade;
  * @method static \JunixLabs\Observatory\Collectors\InboundCollector inbound()
  * @method static \JunixLabs\Observatory\Collectors\OutboundCollector outbound()
  * @method static \JunixLabs\Observatory\Collectors\JobCollector jobs()
+ * @method static \JunixLabs\Observatory\Collectors\ScheduledTaskCollector scheduledTasks()
  * @method static \JunixLabs\Observatory\Contracts\ExporterInterface exporter()
  * @method static void increment(string $name, array $labels = [], float $value = 1)
  * @method static void gauge(string $name, float $value, array $labels = [])

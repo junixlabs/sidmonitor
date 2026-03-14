@@ -20,6 +20,11 @@ interface ExporterInterface
     public function recordJob(array $data): void;
 
     /**
+     * Record a scheduled task execution
+     */
+    public function recordScheduledTask(array $data): void;
+
+    /**
      * Record an exception
      */
     public function recordException(\Throwable $exception, array $context = []): void;

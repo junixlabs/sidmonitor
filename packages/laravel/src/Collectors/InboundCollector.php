@@ -8,9 +8,7 @@ use Symfony\Component\HttpFoundation\Response;
 
 class InboundCollector
 {
-    protected ?float $startTime = null;
-
-    protected ?float $startMemory = null;
+    protected array $requestTimings = [];
 
     protected ExporterInterface $exporter;
 
@@ -21,18 +19,26 @@ class InboundCollector
 
     public function start(Request $request): void
     {
-        $this->startTime = microtime(true);
-        $this->startMemory = memory_get_usage(true);
+        $key = spl_object_id($request);
+        $this->requestTimings[$key] = [
+            'start_time' => microtime(true),
+            'start_memory' => memory_get_usage(true),
+        ];
     }
 
     public function end(Request $request, Response $response): void
     {
-        if ($this->startTime === null) {
+        $key = spl_object_id($request);
+        $timing = $this->requestTimings[$key] ?? null;
+
+        if ($timing === null) {
             return;
         }
 
-        $duration = microtime(true) - $this->startTime;
-        $memoryUsed = memory_get_usage(true) - $this->startMemory;
+        unset($this->requestTimings[$key]);
+
+        $duration = microtime(true) - $timing['start_time'];
+        $memoryUsed = memory_get_usage(true) - $timing['start_memory'];
 
         $data = [
             'method' => $request->method(),
@@ -60,10 +66,6 @@ class InboundCollector
         $data['labels'] = config('observatory.labels', []);
 
         $this->exporter->recordInbound($data);
-
-        // Reset for next request
-        $this->startTime = null;
-        $this->startMemory = null;
     }
 
     public function shouldMonitor(Request $request): bool

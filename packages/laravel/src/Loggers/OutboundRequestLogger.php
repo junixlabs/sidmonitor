@@ -118,6 +118,55 @@ class OutboundRequestLogger
         return $data;
     }
 
+    /**
+     * Log outbound request from Laravel HTTP client events (fallback for Laravel < 10.14).
+     */
+    public function logFromEvent(
+        string $method,
+        string $url,
+        int $statusCode,
+        float $duration,
+        ?string $errorMessage = null
+    ): void {
+        if (! $this->isEnabled()) {
+            return;
+        }
+
+        $parsed = parse_url($url);
+        $host = $parsed['host'] ?? '';
+
+        if (! $this->shouldLog($host, null, $duration)) {
+            return;
+        }
+
+        $durationMs = $duration * 1000;
+
+        $data = [
+            'request_id' => $this->getRequestId(),
+            'type' => 'outbound',
+            'service' => $this->detectService($host),
+            'method' => $method,
+            'url' => $url,
+            'host' => $host,
+            'path' => $parsed['path'] ?? '/',
+            'status_code' => $statusCode,
+            'duration_ms' => round($durationMs, 2),
+            'environment' => config('observatory.labels.environment', config('app.env')),
+        ];
+
+        if ($errorMessage) {
+            $data['error'] = ['message' => $errorMessage];
+        }
+
+        $channel = config('observatory.log_channel', 'observatory');
+
+        if ($errorMessage || $statusCode >= 400) {
+            Log::channel($channel)->error('HTTP_OUTBOUND', $data);
+        } else {
+            Log::channel($channel)->info('HTTP_OUTBOUND', $data);
+        }
+    }
+
     protected function detectService(string $host): string
     {
         $serviceMap = $this->config['services'] ?? [];

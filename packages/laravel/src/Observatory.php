@@ -6,6 +6,7 @@ use Illuminate\Contracts\Foundation\Application;
 use JunixLabs\Observatory\Collectors\InboundCollector;
 use JunixLabs\Observatory\Collectors\JobCollector;
 use JunixLabs\Observatory\Collectors\OutboundCollector;
+use JunixLabs\Observatory\Collectors\ScheduledTaskCollector;
 use JunixLabs\Observatory\Contracts\ExporterInterface;
 
 class Observatory
@@ -30,6 +31,11 @@ class Observatory
     public function jobs(): JobCollector
     {
         return $this->app->make(JobCollector::class);
+    }
+
+    public function scheduledTasks(): ScheduledTaskCollector
+    {
+        return $this->app->make(ScheduledTaskCollector::class);
     }
 
     public function exporter(): ExporterInterface

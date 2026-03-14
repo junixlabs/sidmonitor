@@ -11,7 +11,7 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->append(\SidStack\Monitoring\Middleware\CaptureInboundRequest::class);
+        // Observatory auto-registers its own middleware via the service provider
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -82,11 +82,19 @@ services:
   test-laravel:
     build:
       context: .
-      dockerfile: test-laravel/Dockerfile
+      dockerfile: tests/laravel-test/Dockerfile
     ports:
       - "8080:8080"
     depends_on:
       - backend
+    environment:
+      OBSERVATORY_ENABLED: "true"
+      OBSERVATORY_EXPORTER: sidmonitor
+      SIDMONITOR_ENDPOINT: http://backend:8000
+      SIDMONITOR_API_KEY: ${SIDMONITOR_API_KEY:-your-api-key-here}
+      SIDMONITOR_BATCH_SIZE: 10
+      SIDMONITOR_BATCH_INTERVAL: 5
+      SIDMONITOR_TIMEOUT: 5
     networks:
       - sidmonitor
     restart: unless-stopped

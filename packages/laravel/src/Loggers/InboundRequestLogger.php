@@ -13,11 +13,7 @@ class InboundRequestLogger
 
     protected array $config;
 
-    protected ?float $startTime = null;
-
-    protected ?float $startMemory = null;
-
-    protected ?string $requestId = null;
+    protected array $requestContext = [];
 
     public function __construct(?SensitiveDataMasker $masker = null)
     {
@@ -33,9 +29,12 @@ class InboundRequestLogger
 
     public function start(Request $request): void
     {
-        $this->startTime = microtime(true);
-        $this->startMemory = memory_get_usage(true);
-        $this->requestId = $request->attributes->get('request_id');
+        $key = spl_object_id($request);
+        $this->requestContext[$key] = [
+            'start_time' => microtime(true),
+            'start_memory' => memory_get_usage(true),
+            'request_id' => $request->attributes->get('request_id'),
+        ];
     }
 
     public function log(Request $request, Response $response): void
@@ -44,25 +43,30 @@ class InboundRequestLogger
             return;
         }
 
-        if (! $this->shouldLog($request, $response)) {
+        $key = spl_object_id($request);
+        $context = $this->requestContext[$key] ?? null;
+        $startTime = $context['start_time'] ?? null;
+
+        $duration = $startTime ? (microtime(true) - $startTime) * 1000 : 0;
+
+        if (! $this->shouldLog($request, $response, $duration)) {
+            unset($this->requestContext[$key]);
+
             return;
         }
 
-        $duration = $this->startTime ? (microtime(true) - $this->startTime) * 1000 : 0;
         $peakMemory = memory_get_peak_usage(true);
 
-        $logData = $this->buildLogData($request, $response, $duration, $peakMemory);
+        $logData = $this->buildLogData($request, $response, $duration, $peakMemory, $context);
 
         $channel = config('observatory.log_channel', 'observatory');
 
         Log::channel($channel)->info('HTTP_REQUEST', $logData);
 
-        $this->startTime = null;
-        $this->startMemory = null;
-        $this->requestId = null;
+        unset($this->requestContext[$key]);
     }
 
-    public function shouldLog(Request $request, Response $response): bool
+    public function shouldLog(Request $request, Response $response, float $duration = 0): bool
     {
         $excludePaths = $this->config['exclude_paths'] ?? [];
         $path = $request->path();
@@ -74,8 +78,7 @@ class InboundRequestLogger
         }
 
         $slowThreshold = $this->config['slow_threshold_ms'] ?? 0;
-        if ($slowThreshold > 0 && $this->startTime) {
-            $duration = (microtime(true) - $this->startTime) * 1000;
+        if ($slowThreshold > 0 && $duration > 0) {
             if ($duration < $slowThreshold) {
                 return false;
             }
@@ -88,10 +91,11 @@ class InboundRequestLogger
         Request $request,
         Response $response,
         float $duration,
-        int $peakMemory
+        int $peakMemory,
+        ?array $context = null
     ): array {
         $data = [
-            'request_id' => $this->requestId ?? $request->attributes->get('request_id'),
+            'request_id' => $context['request_id'] ?? $request->attributes->get('request_id'),
             'type' => 'inbound',
             'method' => $request->method(),
             'url' => $request->fullUrl(),
@@ -174,8 +178,7 @@ class InboundRequestLogger
 
     public function setRequestId(string $requestId): self
     {
-        $this->requestId = $requestId;
-
+        // Kept for backwards compatibility — prefer using start() which captures request_id automatically.
         return $this;
     }
 }

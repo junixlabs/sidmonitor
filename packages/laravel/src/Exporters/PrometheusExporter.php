@@ -183,6 +183,29 @@ class PrometheusExporter implements ExporterInterface
         $this->histograms['http_outbound_duration_seconds']->observe($data['duration'], $labels);
     }
 
+    public function recordScheduledTask(array $data): void
+    {
+        if (! $this->ensureInitialized()) {
+            return;
+        }
+
+        if (! isset($this->counters['scheduled_tasks_total'])) {
+            $this->counters['scheduled_tasks_total'] = $this->registry->getOrRegisterCounter(
+                $this->namespace,
+                'scheduled_tasks_total',
+                'Total number of scheduled tasks executed',
+                ['command', 'status']
+            );
+        }
+
+        $labels = [
+            $this->sanitizeLabel($data['command'] ?? 'unknown'),
+            $data['status'] ?? 'completed',
+        ];
+
+        $this->counters['scheduled_tasks_total']->inc($labels);
+    }
+
     public function recordJob(array $data): void
     {
         if (! $this->ensureInitialized()) {

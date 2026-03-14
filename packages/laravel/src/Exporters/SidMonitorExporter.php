@@ -11,8 +11,9 @@ use JunixLabs\Observatory\Contracts\ExporterInterface;
 /**
  * SidMonitor Exporter - Push-based exporter for SidMonitor platform
  *
- * Sends inbound, outbound, and job metrics to SidMonitor backend.
+ * Sends inbound, outbound, job, and scheduled task metrics to SidMonitor backend.
  * Data is buffered and flushed in batches for efficiency.
+ * Includes circuit breaker to avoid blocking when backend is down.
  *
  * Config: observatory.sidmonitor.*
  * Auth: X-API-Key header
@@ -32,9 +33,24 @@ class SidMonitorExporter implements ExporterInterface
 
     protected array $jobBuffer = [];
 
+    protected array $scheduledTaskBuffer = [];
+
     protected int $batchSize;
 
+    protected int $maxBufferSize;
+
+    protected int $timeout;
+
     protected int $lastFlush;
+
+    // Circuit breaker state
+    protected int $consecutiveFailures = 0;
+
+    protected int $circuitOpenUntil = 0;
+
+    protected int $circuitBreakerThreshold;
+
+    protected int $circuitBreakerCooldown;
 
     public function __construct(Application $app)
     {
@@ -42,6 +58,10 @@ class SidMonitorExporter implements ExporterInterface
         $this->endpoint = rtrim(config('observatory.sidmonitor.endpoint', ''), '/');
         $this->apiKey = config('observatory.sidmonitor.api_key', '');
         $this->batchSize = config('observatory.sidmonitor.batch.size', 100);
+        $this->maxBufferSize = config('observatory.sidmonitor.batch.max_buffer_size', 1000);
+        $this->timeout = config('observatory.sidmonitor.timeout', 5);
+        $this->circuitBreakerThreshold = config('observatory.circuit_breaker.threshold', 3);
+        $this->circuitBreakerCooldown = config('observatory.circuit_breaker.cooldown', 30);
         $this->lastFlush = time();
 
         if (empty($this->apiKey)) {
@@ -75,18 +95,24 @@ class SidMonitorExporter implements ExporterInterface
 
         $this->outboundBuffer[] = [
             'request_id' => $data['request_id'] ?? $this->getRequestId(),
+            'parent_request_id' => $data['parent_request_id'] ?? null,
             'timestamp' => $data['timestamp'] ?? now()->toIso8601String(),
-            'endpoint' => $data['full_url'] ?? ($host . ($data['path'] ?? '')),
+            'target_url' => $data['full_url'] ?? ($host . ($data['path'] ?? '')),
             'method' => $data['method'] ?? 'GET',
             'status_code' => (int) ($data['status_code'] ?? 0),
-            'response_time_ms' => round(($data['duration'] ?? 0) * 1000, 2),
-            'third_party_service' => $this->detectService($host),
+            'latency_ms' => round(($data['duration'] ?? 0) * 1000, 2),
+            'service_name' => $this->detectService($host),
             'user_id' => $data['user_id'] ?? $this->getAuthUserId(),
             'user_name' => $data['user_name'] ?? $this->getAuthUserName(),
             'module' => null,
             'tags' => array_values($data['labels'] ?? []),
             'request_body' => $data['request_body'] ?? null,
             'response_body' => $data['response_body'] ?? null,
+            'request_size' => $data['request_size'] ?? null,
+            'response_size' => $data['response_size'] ?? null,
+            'error_message' => $data['error_message'] ?? null,
+            'error_code' => $data['error_code'] ?? null,
+            'retry_count' => $data['retry_count'] ?? 0,
         ];
 
         $this->autoFlushIfNeeded();
@@ -113,7 +139,7 @@ class SidMonitorExporter implements ExporterInterface
             'max_attempts' => (int) ($data['max_attempts'] ?? 1),
             'user_id' => $data['user_id'] ?? $this->getAuthUserId(),
             'memory_usage_mb' => isset($data['memory']) ? round($data['memory'] / 1048576, 2) : null,
-            'metadata' => [],
+            'metadata' => new \stdClass(),
         ];
 
         // Add payload if present
@@ -132,6 +158,34 @@ class SidMonitorExporter implements ExporterInterface
         }
 
         $this->jobBuffer[] = $entry;
+
+        $this->autoFlushIfNeeded();
+    }
+
+    public function recordScheduledTask(array $data): void
+    {
+        $this->scheduledTaskBuffer[] = [
+            'task_id' => $data['task_id'] ?? Str::uuid()->toString(),
+            'command' => $data['command'] ?? 'Unknown',
+            'description' => $data['description'] ?? null,
+            'expression' => $data['expression'] ?? '* * * * *',
+            'timezone' => $data['timezone'] ?? config('app.timezone', 'UTC'),
+            'status' => $data['status'] ?? 'completed',
+            'scheduled_at' => $data['scheduled_at'] ?? now()->toIso8601String(),
+            'started_at' => $data['started_at'] ?? now()->toIso8601String(),
+            'completed_at' => $data['completed_at'] ?? now()->toIso8601String(),
+            'duration_ms' => (int) ($data['duration_ms'] ?? 0),
+            'exit_code' => $data['exit_code'] ?? null,
+            'output' => $data['output'] ?? null,
+            'error_message' => $data['error_message'] ?? null,
+            'error_trace' => $data['error_trace'] ?? null,
+            'without_overlapping' => $data['without_overlapping'] ?? false,
+            'mutex_name' => $data['mutex_name'] ?? null,
+            'expected_run_time' => $data['scheduled_at'] ?? now()->toIso8601String(),
+            'delay_ms' => $data['delay_ms'] ?? 0,
+            'memory_usage_mb' => $data['memory_usage_mb'] ?? null,
+            'metadata' => $data['metadata'] ?? new \stdClass(),
+        ];
 
         $this->autoFlushIfNeeded();
     }
@@ -165,6 +219,11 @@ class SidMonitorExporter implements ExporterInterface
                 'inbound' => count($this->inboundBuffer),
                 'outbound' => count($this->outboundBuffer),
                 'jobs' => count($this->jobBuffer),
+                'scheduled_tasks' => count($this->scheduledTaskBuffer),
+            ],
+            'circuit_breaker' => [
+                'consecutive_failures' => $this->consecutiveFailures,
+                'is_open' => $this->isCircuitOpen(),
             ],
         ], JSON_PRETTY_PRINT);
     }
@@ -189,38 +248,56 @@ class SidMonitorExporter implements ExporterInterface
             return;
         }
 
+        if ($this->isCircuitOpen()) {
+            $this->trimBufferIfNeeded();
+
+            return;
+        }
+
         try {
             $response = Http::withHeaders([
                 'X-API-Key' => $this->apiKey,
                 'Content-Type' => 'application/json',
-            ])->timeout(5)->post($this->endpoint . '/api/ingest/batch', [
+            ])->timeout($this->timeout)->post($this->endpoint . '/api/ingest/batch', [
                 'inbound_logs' => $this->inboundBuffer,
                 'outbound_logs' => $this->outboundBuffer,
             ]);
 
-            if (! $response->successful()) {
+            if ($response->successful()) {
+                $this->inboundBuffer = [];
+                $this->outboundBuffer = [];
+                $this->recordFlushSuccess();
+            } else {
                 Log::warning('Observatory: SidMonitor ingest failed', [
                     'status' => $response->status(),
                 ]);
+                $this->recordFlushFailure();
+                $this->trimBufferIfNeeded();
             }
         } catch (\Exception $e) {
             Log::warning('Observatory: SidMonitor connection error', [
                 'error' => $e->getMessage(),
             ]);
+            $this->recordFlushFailure();
+            $this->trimBufferIfNeeded();
         }
-
-        $this->inboundBuffer = [];
-        $this->outboundBuffer = [];
     }
 
     protected function flushJobs(): void
     {
-        if (empty($this->jobBuffer)) {
+        if (empty($this->jobBuffer) && empty($this->scheduledTaskBuffer)) {
             return;
         }
 
         if (empty($this->apiKey)) {
             $this->jobBuffer = [];
+            $this->scheduledTaskBuffer = [];
+
+            return;
+        }
+
+        if ($this->isCircuitOpen()) {
+            $this->trimBufferIfNeeded();
 
             return;
         }
@@ -229,28 +306,35 @@ class SidMonitorExporter implements ExporterInterface
             $response = Http::withHeaders([
                 'X-API-Key' => $this->apiKey,
                 'Content-Type' => 'application/json',
-            ])->timeout(5)->post($this->endpoint . '/api/ingest/jobs/batch', [
+            ])->timeout($this->timeout)->post($this->endpoint . '/api/ingest/jobs/batch', [
                 'job_logs' => $this->jobBuffer,
-                'scheduled_task_logs' => [],
+                'scheduled_task_logs' => $this->scheduledTaskBuffer,
             ]);
 
-            if (! $response->successful()) {
+            if ($response->successful()) {
+                $this->jobBuffer = [];
+                $this->scheduledTaskBuffer = [];
+                $this->recordFlushSuccess();
+            } else {
                 Log::warning('Observatory: SidMonitor job ingest failed', [
                     'status' => $response->status(),
                 ]);
+                $this->recordFlushFailure();
+                $this->trimBufferIfNeeded();
             }
         } catch (\Exception $e) {
             Log::warning('Observatory: SidMonitor job connection error', [
                 'error' => $e->getMessage(),
             ]);
+            $this->recordFlushFailure();
+            $this->trimBufferIfNeeded();
         }
-
-        $this->jobBuffer = [];
     }
 
     protected function autoFlushIfNeeded(): void
     {
-        $total = count($this->inboundBuffer) + count($this->outboundBuffer) + count($this->jobBuffer);
+        $total = count($this->inboundBuffer) + count($this->outboundBuffer)
+            + count($this->jobBuffer) + count($this->scheduledTaskBuffer);
 
         if ($total >= $this->batchSize) {
             $this->flush();
@@ -263,6 +347,62 @@ class SidMonitorExporter implements ExporterInterface
             $this->flush();
         }
     }
+
+    // --- Circuit Breaker ---
+
+    protected function isCircuitOpen(): bool
+    {
+        if ($this->consecutiveFailures < $this->circuitBreakerThreshold) {
+            return false;
+        }
+
+        if (time() >= $this->circuitOpenUntil) {
+            // Cooldown expired, allow a retry (half-open)
+            return false;
+        }
+
+        return true;
+    }
+
+    protected function recordFlushSuccess(): void
+    {
+        $this->consecutiveFailures = 0;
+        $this->circuitOpenUntil = 0;
+    }
+
+    protected function recordFlushFailure(): void
+    {
+        $this->consecutiveFailures++;
+
+        if ($this->consecutiveFailures >= $this->circuitBreakerThreshold) {
+            $this->circuitOpenUntil = time() + $this->circuitBreakerCooldown;
+            Log::warning('Observatory: Circuit breaker opened — pausing flush for ' . $this->circuitBreakerCooldown . 's', [
+                'consecutive_failures' => $this->consecutiveFailures,
+            ]);
+        }
+    }
+
+    // --- Buffer Management ---
+
+    protected function trimBufferIfNeeded(): void
+    {
+        $max = $this->maxBufferSize;
+
+        if (count($this->inboundBuffer) > $max) {
+            $this->inboundBuffer = array_slice($this->inboundBuffer, -$max);
+        }
+        if (count($this->outboundBuffer) > $max) {
+            $this->outboundBuffer = array_slice($this->outboundBuffer, -$max);
+        }
+        if (count($this->jobBuffer) > $max) {
+            $this->jobBuffer = array_slice($this->jobBuffer, -$max);
+        }
+        if (count($this->scheduledTaskBuffer) > $max) {
+            $this->scheduledTaskBuffer = array_slice($this->scheduledTaskBuffer, -$max);
+        }
+    }
+
+    // --- Helpers ---
 
     protected function detectService(string $host): string
     {
