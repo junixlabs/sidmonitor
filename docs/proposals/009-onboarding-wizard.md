@@ -70,7 +70,7 @@ ALTER TABLE users
 **Laravel:**
 ```bash
 # Step 1: Install
-composer require sidmonitor/laravel-observatory
+composer require junixlabs/laravel-observatory
 
 # Step 2: Publish config
 php artisan vendor:publish --tag=observatory-config

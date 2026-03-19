@@ -18,14 +18,8 @@ COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /app
 
-# Copy the observatory package first (needed for composer install)
-COPY packages/laravel /packages/laravel
-
 # Copy Laravel test app
-COPY tests/laravel-test /app
-
-# Fix composer repository path for Docker context
-RUN sed -i 's|../../packages/laravel|/packages/laravel|' /app/composer.json
+COPY . /app
 
 # Install dependencies (update to resolve lock file mismatch)
 RUN composer update --no-interaction --no-progress --prefer-dist

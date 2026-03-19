@@ -66,7 +66,7 @@ GROUP BY project_id, hour;
 
 ### 3. Laravel SDK — `DatabaseCollector`
 
-New file: `packages/laravel/src/Collectors/DatabaseCollector.php`
+New file: `[laravel-observatory]src/Collectors/DatabaseCollector.php`
 
 Follows the existing collector pattern (InboundCollector, JobCollector, etc.):
 
@@ -103,7 +103,7 @@ class DatabaseCollector
 
 ### 4. SDK Config Extension
 
-Add to `packages/laravel/config/observatory.php`:
+Add to `[laravel-observatory]config/observatory.php`:
 
 ```php
 'database' => [
@@ -177,11 +177,11 @@ Route: `/:orgSlug/:projectSlug/database-queries`
 | Layer | File | Change |
 |-------|------|--------|
 | ClickHouse | `clickhouse/init/06_query_logs.sql` | New — table + materialized view |
-| SDK | `packages/laravel/src/Collectors/DatabaseCollector.php` | New — QueryExecuted listener |
-| SDK | `packages/laravel/config/observatory.php` | Add `database` config section |
-| SDK | `packages/laravel/src/Contracts/ExporterInterface.php` | Add `recordQuery()` method |
-| SDK | `packages/laravel/src/Exporters/SidMonitorExporter.php` | Implement `recordQuery()` |
-| SDK | `packages/laravel/src/ObservatoryServiceProvider.php` | Register DatabaseCollector |
+| SDK | `[laravel-observatory]src/Collectors/DatabaseCollector.php` | New — QueryExecuted listener |
+| SDK | `[laravel-observatory]config/observatory.php` | Add `database` config section |
+| SDK | `[laravel-observatory]src/Contracts/ExporterInterface.php` | Add `recordQuery()` method |
+| SDK | `[laravel-observatory]src/Exporters/SidMonitorExporter.php` | Implement `recordQuery()` |
+| SDK | `[laravel-observatory]src/ObservatoryServiceProvider.php` | Register DatabaseCollector |
 | Backend Model | `backend/app/models/queries.py` | New — QueryLogEntry, QueryStatsResponse |
 | Backend Service | `backend/app/services/ingest_service.py` | Add query insert functions |
 | Backend Service | `backend/app/services/query_service.py` | New — slow query, N+1 detection logic |

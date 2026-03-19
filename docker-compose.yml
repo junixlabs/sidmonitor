@@ -81,8 +81,7 @@ services:
 
   test-laravel:
     build:
-      context: .
-      dockerfile: tests/laravel-test/Dockerfile
+      context: ./tests/laravel-test
     ports:
       - "8080:8080"
     depends_on:

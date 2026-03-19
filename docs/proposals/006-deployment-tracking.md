@@ -187,10 +187,10 @@ This could be a section on the deploy detail page, comparing metrics from the wi
 | Backend Service | `backend/app/services/deploy_service.py` | New — insert + query deploy events |
 | Backend API | `backend/app/api/deploys.py` | New — deploy CRUD endpoints |
 | Backend API | `backend/app/main.py` | Register deploys router |
-| SDK | `packages/laravel/src/Commands/DeployCommand.php` | New — artisan deploy command |
-| SDK | `packages/laravel/src/Contracts/ExporterInterface.php` | Add `recordDeploy()` |
-| SDK | `packages/laravel/src/Exporters/SidMonitorExporter.php` | Implement deploy export |
-| SDK | `packages/laravel/src/ObservatoryServiceProvider.php` | Register artisan command |
+| SDK | `[laravel-observatory]src/Commands/DeployCommand.php` | New — artisan deploy command |
+| SDK | `[laravel-observatory]src/Contracts/ExporterInterface.php` | Add `recordDeploy()` |
+| SDK | `[laravel-observatory]src/Exporters/SidMonitorExporter.php` | Implement deploy export |
+| SDK | `[laravel-observatory]src/ObservatoryServiceProvider.php` | Register artisan command |
 | Frontend | `frontend/src/components/charts/DeployMarkers.tsx` | New — chart overlay component |
 | Frontend | `frontend/src/pages/Deploys.tsx` | New — deploy list page |
 | Frontend | `frontend/src/pages/Dashboard.tsx` | Add deploy markers to charts |

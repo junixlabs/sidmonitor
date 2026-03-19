@@ -92,7 +92,7 @@ This allows identical exceptions from the same location to group together even i
 
 ### 4. Laravel SDK — `ExceptionCollector`
 
-New file: `packages/laravel/src/Collectors/ExceptionCollector.php`
+New file: `[laravel-observatory]src/Collectors/ExceptionCollector.php`
 
 ```php
 class ExceptionCollector
@@ -219,10 +219,10 @@ Route: `/:orgSlug/:projectSlug/exceptions`
 | Layer | File | Change |
 |-------|------|--------|
 | ClickHouse | `clickhouse/init/07_exceptions.sql` | New — table + materialized view |
-| SDK | `packages/laravel/src/Collectors/ExceptionCollector.php` | New — exception handler integration |
-| SDK | `packages/laravel/src/Contracts/ExporterInterface.php` | Add/update `recordException()` |
-| SDK | `packages/laravel/src/Exporters/SidMonitorExporter.php` | Implement exception export |
-| SDK | `packages/laravel/src/ObservatoryServiceProvider.php` | Register ExceptionCollector |
+| SDK | `[laravel-observatory]src/Collectors/ExceptionCollector.php` | New — exception handler integration |
+| SDK | `[laravel-observatory]src/Contracts/ExporterInterface.php` | Add/update `recordException()` |
+| SDK | `[laravel-observatory]src/Exporters/SidMonitorExporter.php` | Implement exception export |
+| SDK | `[laravel-observatory]src/ObservatoryServiceProvider.php` | Register ExceptionCollector |
 | Backend Model | `backend/app/models/exceptions.py` | New — ExceptionEntry, ExceptionGroupResponse |
 | Backend Service | `backend/app/services/ingest_service.py` | Add exception insert functions |
 | Backend Service | `backend/app/services/exception_service.py` | New — grouping queries, stats, timeline |

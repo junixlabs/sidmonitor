@@ -16,7 +16,7 @@ Laravel App (SDK)  ──push──►  FastAPI Backend  ──insert──►  
 
 ## 1. Data Sources
 
-### Laravel Observatory SDK (`packages/laravel/`)
+### Laravel Observatory SDK (`junixlabs/laravel-observatory`)
 
 The primary SDK. Auto-captures 4 types of telemetry:
 

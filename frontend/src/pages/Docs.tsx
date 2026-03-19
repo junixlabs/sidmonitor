@@ -117,7 +117,7 @@ const quickStartSteps = [
   {
     step: 1,
     title: 'Install the SDK',
-    code: 'composer require sidmonitor/laravel-observatory',
+    code: 'composer require junixlabs/laravel-observatory',
   },
   {
     step: 2,

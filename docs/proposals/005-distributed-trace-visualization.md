@@ -168,8 +168,8 @@ This ensures downstream services (also running SidMonitor SDK) can link their in
 | Frontend | `frontend/src/hooks/useTraces.ts` | New — React Query hooks |
 | Frontend | `frontend/src/api/client.ts` | Add traces API namespace |
 | Frontend | `frontend/src/App.tsx` | Add trace route |
-| SDK | `packages/laravel/src/Collectors/OutboundCollector.php` | Enhance trace header propagation |
-| SDK | `packages/laravel/src/Observatory.php` | Add traceId() and currentSpanId() helpers |
+| SDK | `[laravel-observatory]src/Collectors/OutboundCollector.php` | Enhance trace header propagation |
+| SDK | `[laravel-observatory]src/Observatory.php` | Add traceId() and currentSpanId() helpers |
 
 ## Implementation Steps
 
