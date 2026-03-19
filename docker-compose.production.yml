@@ -1,0 +1,87 @@
+# SidMonitor — Production deployment (no source code needed)
+#
+# Usage:
+#   1. Download this file
+#   2. Create .env file (see below)
+#   3. docker compose -f docker-compose.production.yml up -d
+#
+# Required .env:
+#   POSTGRES_PASSWORD=<strong-password>
+#   JWT_SECRET_KEY=<openssl rand -hex 32>
+#   CORS_ORIGINS=https://your-domain.com
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: sidmonitor
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: sidmonitor
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - sidmonitor
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sidmonitor -d sidmonitor"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  clickhouse:
+    image: clickhouse/clickhouse-server:24.8
+    environment:
+      CLICKHOUSE_DB: sid_monitoring
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_DEFAULT_ACCESS_MANAGEMENT: 1
+    volumes:
+      - clickhouse_data:/var/lib/clickhouse
+    networks:
+      - sidmonitor
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8123/ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  backend:
+    image: ghcr.io/junixlabs/sidmonitor-backend:latest
+    depends_on:
+      postgres:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+    environment:
+      HOST: 0.0.0.0
+      PORT: 8000
+      DEBUG: "false"
+      DATABASE_URL: postgresql+asyncpg://sidmonitor:${POSTGRES_PASSWORD}@postgres:5432/sidmonitor
+      CLICKHOUSE_HOST: clickhouse
+      CLICKHOUSE_PORT: 8123
+      CLICKHOUSE_DATABASE: sid_monitoring
+      CLICKHOUSE_USER: default
+      CLICKHOUSE_PASSWORD: ""
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:?Set JWT_SECRET_KEY in .env}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3000}
+    networks:
+      - sidmonitor
+    restart: unless-stopped
+
+  frontend:
+    image: ghcr.io/junixlabs/sidmonitor-frontend:latest
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      - backend
+    networks:
+      - sidmonitor
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  clickhouse_data:
+
+networks:
+  sidmonitor:
+    driver: bridge
