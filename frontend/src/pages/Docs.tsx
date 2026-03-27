@@ -214,10 +214,13 @@ const tocItems: TocItem[] = [
 function TableOfContents({
   activeId,
   onNavigate,
+  items,
 }: {
   activeId: string
   onNavigate: (id: string) => void
+  items?: TocItem[]
 }) {
+  const displayItems = items || tocItems
   const [expanded, setExpanded] = useState<Set<string>>(new Set(tocItems.map((t) => t.id)))
 
   const toggle = (id: string) => {
@@ -231,7 +234,7 @@ function TableOfContents({
 
   return (
     <nav className="space-y-0.5">
-      {tocItems.map((item) => {
+      {displayItems.map((item) => {
         const isActive = activeId === item.id || item.children?.some((c) => c.id === activeId)
         const isExpanded = expanded.has(item.id)
 
@@ -401,6 +404,7 @@ export default function Docs() {
             <TableOfContents
               activeId={activeId}
               onNavigate={scrollTo}
+              items={filteredToc}
             />
           </div>
         </aside>
