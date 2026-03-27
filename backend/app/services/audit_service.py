@@ -45,7 +45,7 @@ async def log_action(
         action=action,
         target_type=target_type,
         target_id=target_id,
-        metadata=metadata or {},
+        extra_data=metadata or {},
         ip_address=ip_address,
     )
     db.add(entry)
@@ -111,7 +111,7 @@ async def enrich_audit_logs(
             "action": entry.action,
             "target_type": entry.target_type,
             "target_id": entry.target_id,
-            "metadata": entry.metadata,
+            "metadata": entry.extra_data,
             "ip_address": entry.ip_address,
             "created_at": entry.created_at,
         })

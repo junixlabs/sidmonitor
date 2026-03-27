@@ -207,7 +207,7 @@ class AuditLog(Base):
     action: Mapped[str] = mapped_column(String(100), nullable=False)  # e.g. project.create, api_key.revoke
     target_type: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)  # project, api_key, member
     target_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
-    metadata: Mapped[Optional[dict]] = mapped_column(JSON, default=dict, nullable=True)
+    extra_data: Mapped[Optional[dict]] = mapped_column("metadata", JSON, default=dict, nullable=True)
     ip_address: Mapped[Optional[str]] = mapped_column(String(45), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
 
