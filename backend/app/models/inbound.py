@@ -1,8 +1,9 @@
 """
 Pydantic models for inbound log query/stats response schemas.
 """
+from typing import List, Optional
+
 from pydantic import BaseModel, Field
-from typing import Optional, List
 
 
 class InboundLogResponse(BaseModel):

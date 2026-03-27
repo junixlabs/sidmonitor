@@ -16,13 +16,13 @@ from app.models.ingest import (
     InboundLogEntry,
     IngestResponse,
 )
-from app.models.outbound import OutboundLogEntry
 from app.models.jobs import (
     BatchJobIngestRequest,
     JobIngestResponse,
     JobLogEntry,
     ScheduledTaskLogEntry,
 )
+from app.models.outbound import OutboundLogEntry
 from app.services import api_keys as api_keys_service
 from app.services import ingest_service
 from app.services import projects as projects_service
@@ -105,7 +105,7 @@ async def ingest_single_log(
             message="Log entry ingested successfully",
             ingested_count=1,
         )
-    except Exception as e:
+    except Exception:
         logger.exception("Error ingesting log entry")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -131,7 +131,7 @@ async def ingest_batch_logs(
             message=f"Batch ingested successfully ({total} entries)",
             ingested_count=total,
         )
-    except Exception as e:
+    except Exception:
         logger.exception("Error ingesting batch")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -158,7 +158,7 @@ async def ingest_jobs(
             message="Job log entry ingested successfully",
             ingested_count=1,
         )
-    except Exception as e:
+    except Exception:
         logger.exception("Error ingesting job log entry")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -181,7 +181,7 @@ async def ingest_scheduled_tasks(
             message="Scheduled task log entry ingested successfully",
             ingested_count=1,
         )
-    except Exception as e:
+    except Exception:
         logger.exception("Error ingesting scheduled task log entry")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
@@ -207,7 +207,7 @@ async def ingest_jobs_batch(
             message=f"Batch ingested successfully ({total} entries)",
             ingested_count=total,
         )
-    except Exception as e:
+    except Exception:
         logger.exception("Error ingesting batch")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,

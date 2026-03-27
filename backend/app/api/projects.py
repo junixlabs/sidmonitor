@@ -33,17 +33,18 @@ from app.models.project import (
     ProjectResponse,
     ProjectUpdate,
 )
+from app.services.audit_service import log_action
 from app.services.projects import (
     build_dsn,
     create_api_key,
     create_project,
-    generate_api_key as generate_api_key_values,
     get_project_by_slug,
-    hash_api_key,
     revoke_api_key,
     update_project,
 )
-from app.services.audit_service import log_action
+from app.services.projects import (
+    generate_api_key as generate_api_key_values,
+)
 
 router = APIRouter()
 

@@ -7,13 +7,13 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.auth import verify_auth
 from app.api.stats._common import safe_float
-from app.services.query_builder import WhereBuilder
 from app.models.stats import (
     UserActivityPoint,
     UserStats,
     UserWithErrors,
 )
 from app.services.clickhouse import get_clickhouse_client
+from app.services.query_builder import WhereBuilder
 
 logger = logging.getLogger(__name__)
 

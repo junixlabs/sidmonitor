@@ -7,6 +7,7 @@ and inserting them. Eliminates duplicate insert functions across api/ingest.py a
 import logging
 import uuid
 from typing import Optional
+
 from app.constants import (
     DEFAULT_PROJECT_ID,
     JOB_LOGS_COLUMNS,
@@ -19,8 +20,8 @@ from app.constants import (
     TABLE_SCHEDULED_TASK_LOGS,
 )
 from app.models.ingest import InboundLogEntry
-from app.models.outbound import OutboundLogEntry
 from app.models.jobs import JobLogEntry, ScheduledTaskLogEntry
+from app.models.outbound import OutboundLogEntry
 from app.services.clickhouse import get_clickhouse_client
 
 logger = logging.getLogger(__name__)

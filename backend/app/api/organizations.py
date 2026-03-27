@@ -7,8 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.api.auth import get_current_user
 from app.database import get_db
-from app.models.database import User
 from app.models.audit import AuditLogListResponse, AuditLogResponse
+from app.models.database import User
 from app.models.organization import (
     InviteMemberRequest,
     MemberRole,
@@ -18,6 +18,7 @@ from app.models.organization import (
     OrganizationResponse,
     OrganizationUpdate,
 )
+from app.services.audit_service import enrich_audit_logs, get_audit_logs
 from app.services.organizations import (
     add_member,
     check_organization_permission,
@@ -29,7 +30,6 @@ from app.services.organizations import (
     remove_member,
     update_member_role,
 )
-from app.services.audit_service import enrich_audit_logs, get_audit_logs
 
 router = APIRouter()
 

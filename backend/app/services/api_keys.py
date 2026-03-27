@@ -1,6 +1,9 @@
 """SQLite-based API Key Service for managing API keys."""
 
 import hashlib
+
+# Database file location — uses /app/data in containers (created with appuser ownership in Dockerfile)
+import os
 import secrets
 import sqlite3
 import uuid
@@ -10,8 +13,6 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-# Database file location — uses /app/data in containers (created with appuser ownership in Dockerfile)
-import os
 _default_db_dir = os.environ.get("APP_DATA_DIR", str(Path(__file__).parent.parent.parent / "data"))
 DB_PATH = Path(_default_db_dir) / "api_keys.db"
 

@@ -2,13 +2,14 @@
 import json
 import os
 from datetime import datetime, timezone
+
 from fastapi import APIRouter, Query
 
 from app.models.frontend_logs import (
     FrontendLogEntry,
     FrontendLogResponse,
-    FrontendLogsListResponse,
     FrontendLogsClearResponse,
+    FrontendLogsListResponse,
 )
 
 router = APIRouter()

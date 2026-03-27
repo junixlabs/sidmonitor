@@ -4,16 +4,14 @@ import logging
 import uuid as uuid_module
 from typing import List, Literal, Optional
 
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-
-from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.auth import verify_auth
 from app.api.stats._common import safe_float
 from app.database import get_db
 from app.models.database import Project as ProjectModel
-from app.services.query_builder import WhereBuilder
 from app.models.stats import (
     DashboardStats,
     EndpointStats,
@@ -24,6 +22,7 @@ from app.models.stats import (
     TimeSeriesPoint,
 )
 from app.services.clickhouse import get_clickhouse_client
+from app.services.query_builder import WhereBuilder
 
 logger = logging.getLogger(__name__)
 

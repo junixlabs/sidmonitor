@@ -21,7 +21,6 @@ from app.models.jobs import (
     ScheduledTaskHealthStats,
     ScheduledTaskPaginatedResponse,
 )
-from app.api.stats._common import safe_float
 from app.services.clickhouse import get_clickhouse_client
 from app.services.query_builder import WhereBuilder
 
