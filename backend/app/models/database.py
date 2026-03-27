@@ -241,9 +241,9 @@ class Feedback(Base):
     user_agent: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     screenshot_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     extra_data: Mapped[Optional[dict]] = mapped_column("metadata", JSON, default=dict, nullable=True)
-    resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relationships
     organization: Mapped[Optional["Organization"]] = relationship("Organization")
