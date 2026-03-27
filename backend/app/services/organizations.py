@@ -3,7 +3,7 @@ Organization service for managing organizations and memberships.
 """
 import re
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 from fastapi import HTTPException, status
@@ -128,7 +128,7 @@ async def create_organization(
         organization_id=organization.id,
         user_id=user_id,
         role=MemberRole.owner.value,
-        joined_at=datetime.utcnow(),
+        joined_at=datetime.now(timezone.utc),
     )
 
     db.add(membership)
@@ -288,7 +288,7 @@ async def add_member(
         organization_id=organization_id,
         user_id=user_id,
         role=role.value if hasattr(role, 'value') else role,
-        joined_at=datetime.utcnow(),
+        joined_at=datetime.now(timezone.utc),
     )
 
     db.add(membership)

@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { useOutboundLogs, useOutboundServices, useOutboundHosts, useOutboundStats, useOutboundServiceHealth, useOutboundHostHealth } from '../hooks/useOutboundLogs'
@@ -8,6 +8,7 @@ import { getStatusColor, getMethodColor } from '../utils/styleHelpers'
 import { downloadFile, convertToCSV, generateFilename } from '../utils/exportHelpers'
 import { formatLatency, formatBytes } from '../utils/format'
 import { Pagination, ExportButton, DetailsModal, ErrorAlert } from '@/components/ui'
+import { useDebounce } from '@/hooks/useDebounce'
 import type { DetailField } from '@/components/ui'
 import type { OutboundLogFilterParams, OutboundLog } from '../types'
 
@@ -44,11 +45,21 @@ export default function OutboundAPIs() {
     page: 1,
     page_size: DEFAULT_PAGE_SIZE,
   })
+  // Separate state for text inputs (for instant UI feedback)
+  const [traceIdInput, setTraceIdInput] = useState('')
+  const debouncedTraceId = useDebounce(traceIdInput, 300)
+
+  // Merge debounced text values into effective filters
+  const effectiveFilters = useMemo<OutboundLogFilterParams>(() => ({
+    ...filters,
+    trace_id: debouncedTraceId || undefined,
+  }), [filters, debouncedTraceId])
+
   const [selectedLog, setSelectedLog] = useState<OutboundLog | null>(null)
   const [selectedService, setSelectedService] = useState<string | null>(null)
 
   // Logs data
-  const { data: logsData, isLoading: logsLoading, error: logsError } = useOutboundLogs(filters)
+  const { data: logsData, isLoading: logsLoading, error: logsError } = useOutboundLogs(effectiveFilters)
   const { data: services = [] } = useOutboundServices()
   const { data: hosts = [] } = useOutboundHosts()
 
@@ -58,10 +69,17 @@ export default function OutboundAPIs() {
   const { data: hostHealth, isLoading: hostHealthLoading } = useOutboundHostHealth()
 
   const handleFilterChange = useCallback((key: keyof OutboundLogFilterParams, value: string) => {
+    // For text inputs, update local state (debounced)
+    if (key === 'trace_id') {
+      setTraceIdInput(value)
+      setFilters((prev) => ({ ...prev, page: 1 }))
+      return
+    }
     setFilters((prev) => ({ ...prev, [key]: value || undefined, page: 1 }))
   }, [])
 
   const handleReset = useCallback(() => {
+    setTraceIdInput('')
     setFilters({ page: 1, page_size: filters.page_size })
   }, [filters.page_size])
 
@@ -80,16 +98,16 @@ export default function OutboundAPIs() {
   const handleExportCSV = useCallback(() => {
     if (!logsData?.data || logsData.data.length === 0) return
     const csv = convertToCSV(logsData.data, CSV_HEADERS, csvRowMapper)
-    const filename = generateFilename('outbound-logs', 'csv', buildFilterParts(filters))
+    const filename = generateFilename('outbound-logs', 'csv', buildFilterParts(effectiveFilters))
     downloadFile(csv, filename, 'text/csv')
-  }, [logsData, filters])
+  }, [logsData, effectiveFilters])
 
   const handleExportJSON = useCallback(() => {
     if (!logsData?.data || logsData.data.length === 0) return
     const json = JSON.stringify(logsData.data, null, 2)
-    const filename = generateFilename('outbound-logs', 'json', buildFilterParts(filters))
+    const filename = generateFilename('outbound-logs', 'json', buildFilterParts(effectiveFilters))
     downloadFile(json, filename, 'application/json')
-  }, [logsData, filters])
+  }, [logsData, effectiveFilters])
 
   const handleServiceClick = useCallback((serviceName: string) => {
     setSelectedService(serviceName)
@@ -207,7 +225,7 @@ export default function OutboundAPIs() {
         <>
       {/* Filter Panel */}
       <div className="bg-surface shadow rounded-lg p-4 mb-6">
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-7">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-6">
           <div>
             <label htmlFor="status-filter" className="block text-sm font-medium text-text-secondary">
               Status
@@ -294,14 +312,14 @@ export default function OutboundAPIs() {
               id="trace-id-filter"
               type="text"
               placeholder="Filter by trace ID..."
-              value={filters.trace_id || ''}
+              value={traceIdInput}
               onChange={(e) => handleFilterChange('trace_id', e.target.value)}
               disabled={logsLoading}
               className="mt-1 block w-full pl-3 pr-3 py-2 text-base border-border-primary focus:outline-none focus:ring-accent focus:border-accent sm:text-sm rounded-md border disabled:bg-surface-tertiary"
             />
           </div>
 
-          <div className="lg:col-span-2 flex items-end">
+          <div className="flex items-end">
             <button
               type="button"
               onClick={handleReset}

@@ -732,3 +732,45 @@ export interface InboundEndpointStats {
   p95_response_time_ms: number
   p99_response_time_ms: number
 }
+
+// Feedback types
+export type FeedbackCategory = 'bug' | 'feature' | 'improvement' | 'question' | 'other'
+export type FeedbackPriority = 'low' | 'medium' | 'high' | 'critical'
+export type FeedbackStatus = 'open' | 'in_progress' | 'resolved' | 'closed'
+
+export interface FeedbackEntry {
+  id: string
+  org_id?: string
+  project_id?: string
+  user_id?: string
+  user_name?: string
+  user_email?: string
+  category: FeedbackCategory
+  title: string
+  description: string
+  priority: FeedbackPriority
+  status: FeedbackStatus
+  page_url?: string
+  user_agent?: string
+  screenshot_url?: string
+  metadata?: Record<string, unknown>
+  resolved_at?: string
+  created_at: string
+  updated_at: string
+}
+
+export interface FeedbackCreateData {
+  category: FeedbackCategory
+  title: string
+  description: string
+  priority?: FeedbackPriority
+  page_url?: string
+  metadata?: Record<string, unknown>
+}
+
+export interface FeedbackListResponse {
+  items: FeedbackEntry[]
+  total: number
+  page: number
+  per_page: number
+}

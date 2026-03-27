@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from pydantic import BaseModel, Field
@@ -9,7 +9,7 @@ from app.models.outbound import OutboundLogEntry
 class InboundLogEntry(BaseModel):
     """Log entry for inbound HTTP requests to the Laravel application."""
     request_id: str = Field(..., description="Unique request identifier")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Request timestamp (defaults to current UTC time)")
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Request timestamp (defaults to current UTC time)")
     endpoint: str = Field(..., description="Request endpoint path")
     method: str = Field(..., description="HTTP method (GET, POST, etc.)")
     status_code: int = Field(..., ge=100, le=599, description="HTTP status code")

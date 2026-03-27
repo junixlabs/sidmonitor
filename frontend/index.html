@@ -7,6 +7,21 @@
     <title>Sid Monitoring - Log Dashboard</title>
   </head>
   <body>
+    <script>
+      // Prevent dark mode flash: apply theme class before React renders
+      (function() {
+        try {
+          var mode = localStorage.getItem('sidmonitor-theme-mode') || 'system';
+          var theme = mode;
+          if (mode === 'system') {
+            theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+          }
+          document.documentElement.classList.add(theme);
+          var density = localStorage.getItem('sidmonitor-theme-density') || 'comfortable';
+          document.documentElement.classList.add('density-' + density);
+        } catch (e) {}
+      })();
+    </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>

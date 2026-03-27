@@ -6,7 +6,9 @@ from typing import Optional
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBasic, HTTPBasicCredentials, HTTPBearer
+from jose import JWTError
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
@@ -50,7 +52,7 @@ async def verify_auth(
         try:
             await get_user_from_token(bearer.credentials, db)
             return True
-        except Exception:
+        except (JWTError, HTTPException):
             pass  # Try other methods
 
     # Try HTTP Basic auth (legacy)
@@ -124,9 +126,16 @@ async def register(user_data: UserRegister, db: AsyncSession = Depends(get_db)):
         name=user_data.name,
     )
 
-    db.add(new_user)
-    await db.commit()
-    await db.refresh(new_user)
+    try:
+        db.add(new_user)
+        await db.commit()
+        await db.refresh(new_user)
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Email already registered",
+        )
 
     # Create access token
     access_token = create_access_token(data={"sub": str(new_user.id)})
@@ -207,6 +216,8 @@ async def logout(current_user: User = Depends(get_current_user)):
 
     Currently just validates the token. Token blacklisting can be added later.
     """
-    # For now, this just validates the token
-    # In future, can implement token blacklist here
+    # For now, this just validates the token.
+    # Token blacklisting should use short-lived tokens (e.g. 15-30 min) combined
+    # with refresh tokens. A full Redis-based token blacklist can be added later
+    # if immediate revocation is required.
     return None

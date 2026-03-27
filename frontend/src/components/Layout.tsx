@@ -1,4 +1,5 @@
-import { ReactNode, useState, useEffect } from 'react'
+import { ReactNode, useState, useEffect, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import { cn } from '@/lib/utils'
 import { Sidebar, Header, StatusBar, SIDEBAR_STORAGE_KEY } from './layoutComponents'
 import { useWorkspaceStore } from '@/stores/workspaceStore'
@@ -16,13 +17,24 @@ export default function Layout({ children }: LayoutProps) {
   const setCurrentOrg = useWorkspaceStore((s) => s.setCurrentOrg)
   const switchProject = useWorkspaceStore((s) => s.switchProject)
   const setOrganizations = useWorkspaceStore((s) => s.setOrganizations)
+  const location = useLocation()
 
   const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
     const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY)
     return stored ? JSON.parse(stored) : false
   })
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   const organizations = useWorkspaceStore((s) => s.organizations)
+
+  // Close mobile sidebar on route change
+  useEffect(() => {
+    setMobileOpen(false)
+  }, [location.pathname])
+
+  const handleMobileToggle = useCallback(() => {
+    setMobileOpen((prev) => !prev)
+  }, [])
 
   // Auto-load organizations when store has none
   useEffect(() => {
@@ -81,18 +93,36 @@ export default function Layout({ children }: LayoutProps) {
 
   return (
     <div className="min-h-screen bg-surface-secondary">
-      <Sidebar
-        collapsed={sidebarCollapsed}
-        onToggle={() => setSidebarCollapsed((prev: boolean) => !prev)}
-      />
-      <Header sidebarCollapsed={sidebarCollapsed} />
+      {/* Mobile backdrop */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 md:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+
+      {/* Sidebar: hidden on mobile unless mobileOpen is true */}
+      <div className={cn(
+        'md:block',
+        mobileOpen ? 'block' : 'hidden'
+      )}>
+        <Sidebar
+          collapsed={sidebarCollapsed}
+          onToggle={() => setSidebarCollapsed((prev: boolean) => !prev)}
+        />
+      </div>
+
+      <Header sidebarCollapsed={sidebarCollapsed} onMobileMenuToggle={handleMobileToggle} />
       <main
         className={cn(
           'pt-14 pb-8 transition-all duration-300',
-          sidebarCollapsed ? 'pl-16' : 'pl-60'
+          // On mobile, no left padding (sidebar is overlay)
+          'pl-0',
+          // On desktop, respect sidebar state
+          sidebarCollapsed ? 'md:pl-16' : 'md:pl-60'
         )}
       >
-        <div className="p-6">
+        <div className="p-4 md:p-6">
           {children}
         </div>
       </main>

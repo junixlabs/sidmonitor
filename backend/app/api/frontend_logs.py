@@ -1,7 +1,7 @@
 """Frontend error logging endpoint - logs to file for debugging."""
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timezone
 from fastapi import APIRouter, Query
 
 from app.models.frontend_logs import (
@@ -13,8 +13,8 @@ from app.models.frontend_logs import (
 
 router = APIRouter()
 
-# Log file path — use /tmp in containers for write access
-LOG_DIR = os.environ.get('FRONTEND_LOG_DIR', os.path.join(os.path.dirname(__file__), '..', '..', 'data'))
+# Log file path — defaults to /app/data in containers (created with appuser ownership in Dockerfile)
+LOG_DIR = os.environ.get('FRONTEND_LOG_DIR', '/app/data')
 LOG_FILE = os.path.join(LOG_DIR, 'frontend-errors.log')
 
 
@@ -26,7 +26,7 @@ async def log_frontend_error(entry: FrontendLogEntry):
 
     # Format log entry
     log_line = {
-        "received_at": datetime.utcnow().isoformat(),
+        "received_at": datetime.now(timezone.utc).isoformat(),
         **entry.model_dump()
     }
 

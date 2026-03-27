@@ -6,12 +6,14 @@ import sqlite3
 import uuid
 from contextlib import contextmanager
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
-# Database file location (in backend directory)
-DB_PATH = Path(__file__).parent.parent.parent / "data" / "api_keys.db"
+# Database file location — uses /app/data in containers (created with appuser ownership in Dockerfile)
+import os
+_default_db_dir = os.environ.get("APP_DATA_DIR", str(Path(__file__).parent.parent.parent / "data"))
+DB_PATH = Path(_default_db_dir) / "api_keys.db"
 
 
 @dataclass
@@ -87,7 +89,7 @@ def create_api_key(name: str) -> tuple[ApiKey, str]:
     key_id = str(uuid.uuid4())
     full_key, prefix = _generate_api_key()
     key_hash = _hash_key(full_key)
-    created_at = datetime.utcnow().isoformat() + "Z"
+    created_at = datetime.now(timezone.utc).isoformat() + "Z"
 
     with get_db_connection() as conn:
         conn.execute(
@@ -169,7 +171,7 @@ def revoke_api_key(key_id: str) -> bool:
     """Revoke an API key. Returns True if successful."""
     init_db()
 
-    revoked_at = datetime.utcnow().isoformat() + "Z"
+    revoked_at = datetime.now(timezone.utc).isoformat() + "Z"
 
     with get_db_connection() as conn:
         cursor = conn.execute(
@@ -207,7 +209,7 @@ def verify_api_key(key: str) -> bool:
 
         if row:
             # Update last_used_at
-            last_used_at = datetime.utcnow().isoformat() + "Z"
+            last_used_at = datetime.now(timezone.utc).isoformat() + "Z"
             conn.execute(
                 """
                 UPDATE api_keys SET last_used_at = ? WHERE id = ?

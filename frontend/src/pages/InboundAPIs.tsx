@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useMemo } from 'react'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { useInboundLogs, useInboundModules, useInboundStats, useInboundModuleHealth } from '../hooks/useInboundLogs'
@@ -8,6 +8,7 @@ import { getStatusColor, getMethodColor } from '../utils/styleHelpers'
 import { downloadFile, convertToCSV, generateFilename } from '../utils/exportHelpers'
 import { formatResponseTime } from '../utils/format'
 import { Pagination, ExportButton, DetailsModal, ErrorAlert } from '@/components/ui'
+import { useDebounce } from '@/hooks/useDebounce'
 import type { DetailField } from '@/components/ui'
 import type { InboundLogFilterParams, InboundLog } from '../types'
 
@@ -85,11 +86,24 @@ export default function InboundAPIs() {
     page: 1,
     page_size: DEFAULT_PAGE_SIZE,
   })
+  // Separate state for text inputs (for instant UI feedback)
+  const [endpointInput, setEndpointInput] = useState('')
+  const [requestIdInput, setRequestIdInput] = useState('')
+  const debouncedEndpoint = useDebounce(endpointInput, 300)
+  const debouncedRequestId = useDebounce(requestIdInput, 300)
+
+  // Merge debounced text values into effective filters
+  const effectiveFilters = useMemo<InboundLogFilterParams>(() => ({
+    ...filters,
+    endpoint: debouncedEndpoint || undefined,
+    request_id: debouncedRequestId || undefined,
+  }), [filters, debouncedEndpoint, debouncedRequestId])
+
   const [selectedLog, setSelectedLog] = useState<InboundLog | null>(null)
   const [selectedModule, setSelectedModule] = useState<string | null>(null)
 
   // Logs data
-  const { data: logsData, isLoading: logsLoading, error: logsError } = useInboundLogs(filters)
+  const { data: logsData, isLoading: logsLoading, error: logsError } = useInboundLogs(effectiveFilters)
   const { data: modules = [] } = useInboundModules()
 
   // Dashboard data
@@ -97,10 +111,23 @@ export default function InboundAPIs() {
   const { data: moduleHealth, isLoading: moduleHealthLoading } = useInboundModuleHealth()
 
   const handleFilterChange = useCallback((key: keyof InboundLogFilterParams, value: string) => {
+    // For text inputs, update local state (debounced)
+    if (key === 'endpoint') {
+      setEndpointInput(value)
+      setFilters((prev) => ({ ...prev, page: 1 }))
+      return
+    }
+    if (key === 'request_id') {
+      setRequestIdInput(value)
+      setFilters((prev) => ({ ...prev, page: 1 }))
+      return
+    }
     setFilters((prev) => ({ ...prev, [key]: value || undefined, page: 1 }))
   }, [])
 
   const handleReset = useCallback(() => {
+    setEndpointInput('')
+    setRequestIdInput('')
     setFilters({ page: 1, page_size: filters.page_size })
   }, [filters.page_size])
 
@@ -119,16 +146,16 @@ export default function InboundAPIs() {
   const handleExportCSV = useCallback(() => {
     if (!logsData?.data || logsData.data.length === 0) return
     const csv = convertToCSV(logsData.data, CSV_HEADERS, csvRowMapper)
-    const filename = generateFilename('inbound-logs', 'csv', buildFilterParts(filters))
+    const filename = generateFilename('inbound-logs', 'csv', buildFilterParts(effectiveFilters))
     downloadFile(csv, filename, 'text/csv')
-  }, [logsData, filters])
+  }, [logsData, effectiveFilters])
 
   const handleExportJSON = useCallback(() => {
     if (!logsData?.data || logsData.data.length === 0) return
     const json = JSON.stringify(logsData.data, null, 2)
-    const filename = generateFilename('inbound-logs', 'json', buildFilterParts(filters))
+    const filename = generateFilename('inbound-logs', 'json', buildFilterParts(effectiveFilters))
     downloadFile(json, filename, 'application/json')
-  }, [logsData, filters])
+  }, [logsData, effectiveFilters])
 
   const handleModuleClick = useCallback((moduleName: string) => {
     setSelectedModule(moduleName)
@@ -140,10 +167,10 @@ export default function InboundAPIs() {
 
   const handleViewLogs = useCallback((moduleName: string, endpoint: string, method: string) => {
     // Set filters and switch to logs tab
+    setEndpointInput(endpoint)
     setFilters((prev) => ({
       ...prev,
       module: moduleName,
-      endpoint: endpoint,
       method: method,
       page: 1,
     }))
@@ -297,7 +324,7 @@ export default function InboundAPIs() {
               id="endpoint-filter"
               type="text"
               placeholder="Filter by endpoint..."
-              value={filters.endpoint || ''}
+              value={endpointInput}
               onChange={(e) => handleFilterChange('endpoint', e.target.value)}
               disabled={logsLoading}
               className="mt-1 block w-full pl-3 pr-3 py-2 text-base border-border-primary focus:outline-none focus:ring-accent focus:border-accent sm:text-sm rounded-md border disabled:bg-surface-tertiary"
@@ -312,7 +339,7 @@ export default function InboundAPIs() {
               id="request-id-filter"
               type="text"
               placeholder="Filter by request ID..."
-              value={filters.request_id || ''}
+              value={requestIdInput}
               onChange={(e) => handleFilterChange('request_id', e.target.value)}
               disabled={logsLoading}
               className="mt-1 block w-full pl-3 pr-3 py-2 text-base border-border-primary focus:outline-none focus:ring-accent focus:border-accent sm:text-sm rounded-md border disabled:bg-surface-tertiary"

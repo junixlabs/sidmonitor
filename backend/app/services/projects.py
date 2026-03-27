@@ -1,12 +1,13 @@
 """
 Project service for project management and API key generation.
 """
+import asyncio
 import hashlib
 import re
 import secrets
 import time
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Tuple
 
 from fastapi import HTTPException, status
@@ -22,6 +23,7 @@ settings = get_settings()
 # Debounce last_used_at updates: key_hash -> last update timestamp
 _last_used_at_cache: dict[str, float] = {}
 _LAST_USED_AT_INTERVAL = 60  # seconds
+_cache_lock = asyncio.Lock()
 
 
 def generate_project_slug(name: str) -> str:
@@ -334,11 +336,12 @@ async def verify_api_key_full(key: str, db: AsyncSession) -> Tuple[Optional[Proj
         return None, None
 
     # Debounce last_used_at — only flush to DB once per interval
-    now = time.monotonic()
-    if now - _last_used_at_cache.get(key_hash, 0) >= _LAST_USED_AT_INTERVAL:
-        api_key.last_used_at = datetime.utcnow()
-        await db.flush()
-        _last_used_at_cache[key_hash] = now
+    async with _cache_lock:
+        now = time.monotonic()
+        if now - _last_used_at_cache.get(key_hash, 0) >= _LAST_USED_AT_INTERVAL:
+            api_key.last_used_at = datetime.now(timezone.utc)
+            await db.flush()
+            _last_used_at_cache[key_hash] = now
 
     # Get and return project
     result = await db.execute(
@@ -357,7 +360,7 @@ async def revoke_api_key(api_key: ApiKey, db: AsyncSession) -> None:
         api_key: API key to revoke
         db: Database session
     """
-    api_key.revoked_at = datetime.utcnow()
+    api_key.revoked_at = datetime.now(timezone.utc)
     await db.flush()
 
 

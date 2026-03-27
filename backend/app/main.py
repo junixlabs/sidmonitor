@@ -5,6 +5,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api import (
     auth,
+    feedback,
     frontend_logs,
     health,
     inbound,
@@ -53,8 +54,8 @@ def create_app() -> FastAPI:
         CORSMiddleware,
         allow_origins=app_settings.cors_origins_list,
         allow_credentials=True,
-        allow_methods=["*"],
-        allow_headers=["*"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+        allow_headers=["Authorization", "Content-Type", "X-API-Key", "Accept"],
     )
 
     app.include_router(health.router, tags=["Health"])
@@ -72,6 +73,7 @@ def create_app() -> FastAPI:
     app.include_router(jobs_query.router, prefix="/api/v1", tags=["Jobs Query"])
     app.include_router(settings_router.router, prefix="/api", tags=["Settings"])
     app.include_router(frontend_logs.router, prefix="/api", tags=["Frontend Logs"])
+    app.include_router(feedback.router, prefix="/api", tags=["Feedback"])
 
     return app
 

@@ -2,7 +2,7 @@
 Project API endpoints for project CRUD and API key management.
 """
 import uuid
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Path, Query, Request, status
 from sqlalchemy import select
@@ -49,7 +49,13 @@ router = APIRouter()
 
 
 def get_client_ip(request: Request) -> str | None:
-    """Extract client IP address from request."""
+    """Extract client IP address from request, checking proxy headers first."""
+    forwarded = request.headers.get("x-forwarded-for")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    real_ip = request.headers.get("x-real-ip")
+    if real_ip:
+        return real_ip
     if request and request.client:
         return request.client.host
     return None
@@ -780,7 +786,7 @@ async def rotate_api_key(
         raise HTTPException(status_code=404, detail="API key not found or already revoked")
 
     # Set expiration on old key
-    old_key.expires_at = datetime.utcnow() + timedelta(hours=grace_hours)
+    old_key.expires_at = datetime.now(timezone.utc) + timedelta(hours=grace_hours)
     await db.flush()
 
     # Create new key

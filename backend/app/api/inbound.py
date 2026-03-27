@@ -7,6 +7,7 @@ import logging
 import math
 from typing import List, Optional
 
+from clickhouse_connect.driver.exceptions import ClickHouseError
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.auth import verify_auth
@@ -70,6 +71,9 @@ async def get_inbound_stats(
             p95_response_time_ms=safe_float(row[5]),
             modules_count=row[6] or 0,
         )
+    except ClickHouseError as e:
+        logger.error(f"ClickHouse error fetching inbound stats: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching inbound stats")
     except Exception as e:
         logger.error(f"Error fetching inbound stats: {e}")
         raise HTTPException(status_code=500, detail="Error fetching inbound stats")
@@ -125,6 +129,9 @@ async def get_inbound_stats_by_module(
             ))
 
         return modules
+    except ClickHouseError as e:
+        logger.error(f"ClickHouse error fetching inbound stats by module: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching inbound stats by module")
     except Exception as e:
         logger.error(f"Error fetching inbound stats by module: {e}")
         raise HTTPException(status_code=500, detail="Error fetching inbound stats by module")
@@ -194,6 +201,9 @@ async def get_inbound_module_endpoints(
             ))
 
         return endpoints
+    except ClickHouseError as e:
+        logger.error(f"ClickHouse error fetching inbound module endpoints for {module_name}: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching inbound module endpoints")
     except Exception as e:
         logger.error(f"Error fetching inbound module endpoints for {module_name}: {e}")
         raise HTTPException(status_code=500, detail="Error fetching inbound module endpoints")
@@ -284,6 +294,9 @@ async def get_inbound_logs(
             page_size=page_size,
             total_pages=total_pages,
         )
+    except ClickHouseError as e:
+        logger.error(f"ClickHouse error fetching inbound logs: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching inbound logs")
     except Exception as e:
         logger.error(f"Error fetching inbound logs: {e}")
         raise HTTPException(status_code=500, detail="Error fetching inbound logs")
@@ -313,6 +326,9 @@ async def get_inbound_modules(
         """
         result = client.query(query, parameters=params)
         return [row[0] for row in result.result_rows]
+    except ClickHouseError as e:
+        logger.error(f"ClickHouse error fetching inbound modules: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching inbound modules")
     except Exception as e:
         logger.error(f"Error fetching inbound modules: {e}")
         raise HTTPException(status_code=500, detail="Error fetching inbound modules")
@@ -340,6 +356,9 @@ async def get_inbound_endpoints(
         """
         result = client.query(query, parameters=params)
         return [row[0] for row in result.result_rows]
+    except ClickHouseError as e:
+        logger.error(f"ClickHouse error fetching inbound endpoints: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching inbound endpoints")
     except Exception as e:
         logger.error(f"Error fetching inbound endpoints: {e}")
         raise HTTPException(status_code=500, detail="Error fetching inbound endpoints")
@@ -398,6 +417,9 @@ async def get_inbound_log_by_id(
         )
     except HTTPException:
         raise
+    except ClickHouseError as e:
+        logger.error(f"ClickHouse error fetching inbound log entry {log_id}: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching inbound log entry")
     except Exception as e:
         logger.error(f"Error fetching inbound log entry {log_id}: {e}")
         raise HTTPException(status_code=500, detail="Error fetching inbound log entry")

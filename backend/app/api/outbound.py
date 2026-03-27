@@ -100,10 +100,10 @@ async def ingest_outbound_log(
             ingested_count=1,
         )
     except Exception as e:
-        logger.error(f"Error ingesting outbound log entry: {e}")
+        logger.exception("Error ingesting outbound log entry")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error ingesting outbound log entry: {str(e)}",
+            detail="Error ingesting outbound log entry",
         )
 
 
@@ -169,10 +169,10 @@ async def ingest_outbound_batch(
             ingested_count=len(rows),
         )
     except Exception as e:
-        logger.error(f"Error ingesting outbound batch: {e}")
+        logger.exception("Error ingesting outbound batch")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error ingesting outbound batch: {str(e)}",
+            detail="Error ingesting outbound batch",
         )
 
 

@@ -1,9 +1,11 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, useLocation } from 'react-router-dom'
 import { Toaster } from 'sonner'
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useEffect } from 'react'
 
 import { AuthProvider } from './contexts/AuthContext'
 import { ThemeProvider } from './contexts/ThemeContext'
+import ErrorBoundary from './components/ErrorBoundary'
+import FeedbackWidget from './components/FeedbackWidget'
 import Layout from './components/Layout'
 import AuthGuard from './components/guards/AuthGuard'
 import ProjectLayout from './components/layouts/ProjectLayout'
@@ -25,18 +27,41 @@ const WhatsNew = lazy(() => import('./pages/WhatsNew'))
 const Docs = lazy(() => import('./pages/Docs'))
 const OrgSettings = lazy(() => import('./pages/OrgSettings'))
 const UserSettings = lazy(() => import('./pages/UserSettings'))
+const FeedbackPage = lazy(() => import('./pages/Feedback'))
 
-function PageLoader() {
+function PageSkeleton() {
   return (
-    <div className="flex items-center justify-center py-12">
-      <div className="text-text-muted">Loading...</div>
+    <div className="p-6 space-y-6 animate-pulse">
+      {/* Title skeleton */}
+      <div className="space-y-2">
+        <div className="h-7 bg-surface-tertiary rounded w-48" />
+        <div className="h-4 bg-surface-tertiary rounded w-72" />
+      </div>
+      {/* Cards skeleton */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-28 bg-surface-tertiary rounded-lg" />
+        ))}
+      </div>
+      {/* Table skeleton */}
+      <div className="bg-surface-tertiary rounded-lg h-64" />
     </div>
   )
 }
 
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    window.scrollTo(0, 0)
+  }, [pathname])
+  return null
+}
+
 function AppRoutes() {
   return (
-    <Suspense fallback={<PageLoader />}>
+    <>
+    <ScrollToTop />
+    <Suspense fallback={<PageSkeleton />}>
     <Routes>
       {/* Public routes */}
       <Route path="/login" element={<Login />} />
@@ -49,6 +74,7 @@ function AppRoutes() {
         <Route path="/organizations" element={<Layout><Organizations /></Layout>} />
         <Route path="/whats-new" element={<Layout><WhatsNew /></Layout>} />
         <Route path="/docs" element={<Layout><Docs /></Layout>} />
+        <Route path="/feedback" element={<Layout><FeedbackPage /></Layout>} />
         <Route path="/settings/account" element={<Layout><UserSettings /></Layout>} />
         <Route path="/:orgSlug/settings" element={<Layout><OrgSettings /></Layout>} />
         <Route path="/:orgSlug/projects" element={<Projects />} />
@@ -67,17 +93,21 @@ function AppRoutes() {
       </Route>
     </Routes>
     </Suspense>
+    </>
   )
 }
 
 function App() {
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        <AppRoutes />
-        <Toaster position="top-right" richColors />
-      </AuthProvider>
-    </ThemeProvider>
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <AppRoutes />
+          <FeedbackWidget />
+          <Toaster position="top-right" richColors />
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
   )
 }
 

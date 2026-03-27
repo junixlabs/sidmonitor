@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "sidmonitor": {
+      "command": "python",
+      "args": ["mcp_server.py"],
+      "cwd": "/path/to/sidmonitor/monitor/backend",
+      "env": {
+        "SIDMONITOR_API_KEY": "smk_your_project_api_key_here",
+        "DATABASE_URL": "postgresql+asyncpg://sidmonitor:password@localhost:5432/sidmonitor",
+        "CLICKHOUSE_HOST": "localhost",
+        "CLICKHOUSE_PORT": "8123",
+        "JWT_SECRET_KEY": "your-jwt-secret",
+        "DEBUG": "true"
+      }
+    }
+  }
+}

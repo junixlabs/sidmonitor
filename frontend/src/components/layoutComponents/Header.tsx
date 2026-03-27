@@ -17,16 +17,18 @@ import {
   User,
   LogOut,
   ChevronDown,
+  Menu,
 } from 'lucide-react'
 
 interface HeaderProps {
   sidebarCollapsed: boolean
+  onMobileMenuToggle?: () => void
 }
 
 // Persists across re-mounts caused by Layout re-creating on route changes
 const persistedReadAlertIds = new Set<string>()
 
-export default function Header({ sidebarCollapsed }: HeaderProps) {
+export default function Header({ sidebarCollapsed, onMobileMenuToggle }: HeaderProps) {
   const navigate = useNavigate()
   const { user, logout } = useAuth()
   const { resolvedTheme, toggleTheme } = useTheme()
@@ -74,16 +76,28 @@ export default function Header({ sidebarCollapsed }: HeaderProps) {
       className={cn(
         'fixed top-0 right-0 h-14 z-30',
         'flex items-center justify-between px-4',
-        'border-b transition-all duration-300'
+        'border-b transition-all duration-300',
+        'left-0 md:left-[var(--sidebar-width)]'
       )}
       style={{
-        left: sidebarCollapsed ? '64px' : '240px',
+        '--sidebar-width': sidebarCollapsed ? '64px' : '240px',
         backgroundColor: 'var(--bg-primary)',
         borderColor: 'var(--border-primary)',
-      }}
+      } as React.CSSProperties}
     >
-      {/* Left section - Project selector */}
+      {/* Left section - Mobile menu toggle + Project selector */}
       <div className="flex items-center gap-4">
+        {/* Hamburger menu for mobile */}
+        {onMobileMenuToggle && (
+          <button
+            onClick={onMobileMenuToggle}
+            className="md:hidden p-2 rounded-lg transition-colors"
+            style={{ color: 'var(--text-secondary)' }}
+            aria-label="Toggle navigation menu"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+        )}
         <ProjectSwitcher />
 
         {/* Command palette trigger (placeholder) */}

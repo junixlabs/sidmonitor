@@ -15,6 +15,7 @@ import {
   Building,
   Globe,
   CircleHelp,
+  MessageSquarePlus,
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -110,6 +111,12 @@ const bottomItems: NavItem[] = [
     page: '/whats-new',
     label: "What's New",
     icon: <Sparkles className="w-5 h-5" />,
+    absolute: true,
+  },
+  {
+    page: '/feedback',
+    label: 'Feedback',
+    icon: <MessageSquarePlus className="w-5 h-5" />,
     absolute: true,
   },
   {

@@ -1,21 +1,50 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Folder, BarChart3, AlertTriangle, Search, ChevronRight, Plus } from 'lucide-react'
 import { useWorkspaceStore } from '@/stores/workspaceStore'
 import { formatNumber, formatResponseTime } from '@/utils/format'
 import { ErrorAlert } from '@/components/ui'
 import { useGlobalStats } from '@/hooks/useLogs'
+import { orgApi, projectApi } from '@/api/client'
 
 type TimeRange = '24h' | '7d' | '30d'
 
 export default function GlobalDashboard() {
   const navigate = useNavigate()
   const projects = useWorkspaceStore((s) => s.projects)
+  const setProjects = useWorkspaceStore((s) => s.setProjects)
+  const setOrganizations = useWorkspaceStore((s) => s.setOrganizations)
+  const setCurrentOrg = useWorkspaceStore((s) => s.setCurrentOrg)
+  const organizations = useWorkspaceStore((s) => s.organizations)
   const [searchQuery, setSearchQuery] = useState('')
   const [timeRange, setTimeRange] = useState<TimeRange>('24h')
   const { data: stats, isLoading: loading, error: queryError } = useGlobalStats(timeRange)
 
   const currentOrg = useWorkspaceStore((s) => s.currentOrg)
+
+  // Ensure projects are loaded when the global dashboard mounts
+  useEffect(() => {
+    async function loadProjects() {
+      try {
+        let orgs = organizations
+        if (orgs.length === 0) {
+          orgs = await orgApi.list()
+          setOrganizations(orgs)
+          if (!currentOrg && orgs.length > 0) {
+            setCurrentOrg(orgs[0])
+          }
+        }
+        const org = currentOrg || orgs[0]
+        if (org && projects.length === 0) {
+          const loaded = await projectApi.list(org.slug)
+          setProjects(loaded)
+        }
+      } catch {
+        // ignore — Layout will also attempt this
+      }
+    }
+    loadProjects()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleProjectClick = (projectId: string) => {
     const existingProject = projects.find(p => p.id === projectId)

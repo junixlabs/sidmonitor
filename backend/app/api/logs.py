@@ -2,6 +2,7 @@ import logging
 import math
 from typing import List, Optional
 
+from clickhouse_connect.driver.exceptions import ClickHouseError
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.api.auth import verify_auth
@@ -108,6 +109,9 @@ async def get_logs(
             page_size=page_size,
             total_pages=total_pages,
         )
+    except ClickHouseError as e:
+        logger.error(f"ClickHouse error fetching logs: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching logs")
     except Exception as e:
         logger.error(f"Error fetching logs: {e}")
         raise HTTPException(status_code=500, detail="Error fetching logs")
@@ -169,6 +173,9 @@ async def get_log_by_id(
         )
     except HTTPException:
         raise
+    except ClickHouseError as e:
+        logger.error(f"ClickHouse error fetching log entry {log_id}: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching log entry")
     except Exception as e:
         logger.error(f"Error fetching log entry {log_id}: {e}")
         raise HTTPException(status_code=500, detail="Error fetching log entry")
@@ -187,6 +194,9 @@ async def get_modules(_: bool = Depends(verify_auth)):
         """
         result = client.query(query)
         return [row[0] for row in result.result_rows]
+    except ClickHouseError as e:
+        logger.error(f"ClickHouse error fetching modules: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching modules")
     except Exception as e:
         logger.error(f"Error fetching modules: {e}")
         raise HTTPException(status_code=500, detail="Error fetching modules")
@@ -205,6 +215,9 @@ async def get_endpoints(_: bool = Depends(verify_auth)):
         """
         result = client.query(query)
         return [row[0] for row in result.result_rows]
+    except ClickHouseError as e:
+        logger.error(f"ClickHouse error fetching endpoints: {e}")
+        raise HTTPException(status_code=500, detail="Error fetching endpoints")
     except Exception as e:
         logger.error(f"Error fetching endpoints: {e}")
         raise HTTPException(status_code=500, detail="Error fetching endpoints")

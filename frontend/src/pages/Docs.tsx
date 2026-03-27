@@ -131,7 +131,7 @@ const quickStartSteps = [
 OBSERVATORY_ENABLED=true
 OBSERVATORY_EXPORTER=sidmonitor
 SIDMONITOR_API_KEY=your-api-key-here
-SIDMONITOR_ENDPOINT=https://api.sidmonitor.com`,
+SIDMONITOR_ENDPOINT=https://your-sidmonitor-host`,
   },
   {
     step: 4,
@@ -216,7 +216,7 @@ export default function Docs() {
         <h2 className="text-sm font-semibold text-text-primary mb-3">Need more help?</h2>
         <div className="flex flex-wrap gap-4">
           <a
-            href="https://github.com/nicepkg/sidmonitor"
+            href="https://github.com/junixlabs/sidmonitor"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline"
@@ -225,7 +225,7 @@ export default function Docs() {
             <ExternalLink className="w-3.5 h-3.5" />
           </a>
           <a
-            href="https://github.com/nicepkg/sidmonitor/issues"
+            href="https://github.com/junixlabs/sidmonitor/issues"
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 text-sm text-accent hover:underline"

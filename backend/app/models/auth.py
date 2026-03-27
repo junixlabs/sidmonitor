@@ -1,18 +1,31 @@
 """
 Pydantic models for authentication request/response schemas.
 """
+import re
 import uuid
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 
 
 class UserRegister(BaseModel):
     """Schema for user registration request."""
     email: EmailStr = Field(..., description="User email address")
-    password: str = Field(..., min_length=8, description="Password must be at least 8 characters")
+    password: str = Field(..., min_length=10, description="Password must be at least 10 characters")
     name: str = Field(..., min_length=1, max_length=255, description="User display name")
+
+    @field_validator("password")
+    @classmethod
+    def validate_password_strength(cls, v: str) -> str:
+        """Ensure password contains at least 1 uppercase, 1 lowercase, and 1 digit."""
+        if not re.search(r"[A-Z]", v):
+            raise ValueError("Password must contain at least one uppercase letter")
+        if not re.search(r"[a-z]", v):
+            raise ValueError("Password must contain at least one lowercase letter")
+        if not re.search(r"[0-9]", v):
+            raise ValueError("Password must contain at least one digit")
+        return v
 
 
 class UserLogin(BaseModel):

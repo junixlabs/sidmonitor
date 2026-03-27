@@ -43,7 +43,7 @@ export default function StatusBar({ sidebarCollapsed }: StatusBarProps) {
     <footer
       className={cn(
         'fixed bottom-0 right-0 h-8 z-30',
-        'flex items-center justify-between px-4',
+        'hidden md:flex items-center justify-between px-4',
         'border-t border-border-primary text-xs transition-all duration-300',
         'bg-surface text-text-muted'
       )}

@@ -2,7 +2,7 @@
 SQLAlchemy models for multi-tenant PostgreSQL database.
 """
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 
 from sqlalchemy import JSON, Boolean, DateTime, ForeignKey, Index, String
@@ -25,8 +25,8 @@ class User(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     avatar_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
     email_verified: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relationships
     owned_organizations: Mapped[list["Organization"]] = relationship("Organization", back_populates="owner", foreign_keys="Organization.owner_id")
@@ -49,8 +49,8 @@ class Organization(Base):
     slug: Mapped[str] = mapped_column(String(100), unique=True, nullable=False, index=True)
     owner_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     plan: Mapped[str] = mapped_column(String(50), default="free", nullable=False)  # free, pro, enterprise
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relationships
     owner: Mapped["User"] = relationship("User", back_populates="owned_organizations", foreign_keys=[owner_id])
@@ -70,7 +70,7 @@ class OrganizationMember(Base):
     organization_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("organizations.id"), nullable=False)
     user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     role: Mapped[str] = mapped_column(String(50), nullable=False)  # owner, admin, member
-    invited_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    invited_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
     joined_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
 
     # Relationships
@@ -99,7 +99,7 @@ class Project(Base):
     dsn_public_key: Mapped[str] = mapped_column(String(32), unique=True, nullable=False, index=True)
     environment: Mapped[str] = mapped_column(String(50), default="production", nullable=False)
     created_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relationships
     organization: Mapped["Organization"] = relationship("Organization", back_populates="projects")
@@ -154,7 +154,7 @@ class ApiKey(Base):
     revoked_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     expires_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     rotated_from: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("api_keys.id"), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relationships
     project: Mapped["Project"] = relationship("Project", back_populates="api_keys")
@@ -181,7 +181,7 @@ class Invitation(Base):
     invited_by: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     accepted_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relationships
     organization: Mapped["Organization"] = relationship("Organization", back_populates="invitations")
@@ -209,7 +209,7 @@ class AuditLog(Base):
     target_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), nullable=True)
     extra_data: Mapped[Optional[dict]] = mapped_column("metadata", JSON, default=dict, nullable=True)
     ip_address: Mapped[Optional[str]] = mapped_column(String(45), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     # Relationships
     organization: Mapped["Organization"] = relationship("Organization")
@@ -222,3 +222,39 @@ class AuditLog(Base):
 
     def __repr__(self) -> str:
         return f"<AuditLog(id={self.id}, action={self.action})>"
+
+
+class Feedback(Base):
+    """User feedback / bug report model."""
+    __tablename__ = "feedback"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    org_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("organizations.id", ondelete="SET NULL"), nullable=True)
+    project_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="SET NULL"), nullable=True)
+    user_id: Mapped[Optional[uuid.UUID]] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+    category: Mapped[str] = mapped_column(String(50), nullable=False)  # bug, feature, improvement, question, other
+    title: Mapped[str] = mapped_column(String(255), nullable=False)
+    description: Mapped[str] = mapped_column(String(5000), nullable=False)
+    priority: Mapped[str] = mapped_column(String(20), default="medium", nullable=False)  # low, medium, high, critical
+    status: Mapped[str] = mapped_column(String(20), default="open", nullable=False)  # open, in_progress, resolved, closed
+    page_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    user_agent: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    screenshot_url: Mapped[Optional[str]] = mapped_column(String(500), nullable=True)
+    extra_data: Mapped[Optional[dict]] = mapped_column("metadata", JSON, default=dict, nullable=True)
+    resolved_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+
+    # Relationships
+    organization: Mapped[Optional["Organization"]] = relationship("Organization")
+    project: Mapped[Optional["Project"]] = relationship("Project")
+    user: Mapped[Optional["User"]] = relationship("User")
+
+    __table_args__ = (
+        Index("idx_feedback_org", "org_id"),
+        Index("idx_feedback_status", "status"),
+        Index("idx_feedback_created", "created_at"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<Feedback(id={self.id}, title={self.title}, status={self.status})>"

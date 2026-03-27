@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from urllib.parse import urlparse
 
@@ -15,7 +15,7 @@ class OutboundLogEntry(BaseModel):
 
     # Required identifiers
     request_id: str = Field(..., description="Unique request identifier")
-    timestamp: datetime = Field(default_factory=datetime.utcnow, description="Request timestamp (defaults to current UTC time)")
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc), description="Request timestamp (defaults to current UTC time)")
 
     # Service info (accepts legacy 'third_party_service' alias)
     service_name: str = Field(

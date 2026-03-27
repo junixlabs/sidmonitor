@@ -2,7 +2,7 @@
 
 import logging
 import secrets
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional, Union
 
 from fastapi import APIRouter, Depends, Header, HTTPException, status
@@ -31,6 +31,15 @@ router = APIRouter()
 logger = logging.getLogger(__name__)
 
 
+class ApiScope:
+    """Constants for API key scopes to avoid magic strings."""
+    INGEST_WRITE = "ingest:write"
+    INGEST_LEGACY = "ingest"
+    DATA_READ = "data:read"
+    SETTINGS_READ = "settings:read"
+    SETTINGS_WRITE = "settings:write"
+
+
 async def verify_api_key_and_get_project(
     x_api_key: str = Header(..., alias="X-API-Key"),
     db: AsyncSession = Depends(get_db)
@@ -43,7 +52,7 @@ async def verify_api_key_and_get_project(
     project, api_key = await projects_service.verify_api_key_full(x_api_key, db)
     if project and api_key:
         # Check expiration
-        if api_key.expires_at and api_key.expires_at < datetime.utcnow():
+        if api_key.expires_at and api_key.expires_at < datetime.now(timezone.utc):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="API key expired",
@@ -53,7 +62,7 @@ async def verify_api_key_and_get_project(
         if not _has_ingest_scope(api_key.scopes):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="API key missing required scope: ingest:write",
+                detail=f"API key missing required scope: {ApiScope.INGEST_WRITE}",
             )
         return project
 
@@ -75,7 +84,7 @@ async def verify_api_key_and_get_project(
 
 def _has_ingest_scope(scopes: list) -> bool:
     """Check if scopes include ingest permission (supports legacy 'ingest' and new 'ingest:write')."""
-    return "ingest:write" in scopes or "ingest" in scopes
+    return ApiScope.INGEST_WRITE in scopes or ApiScope.INGEST_LEGACY in scopes
 
 
 @router.post("/ingest", response_model=IngestResponse)
@@ -100,7 +109,7 @@ async def ingest_single_log(
         logger.exception("Error ingesting log entry")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error ingesting log entry: {str(e)}",
+            detail="Error ingesting log entry",
         )
 
 
@@ -126,7 +135,7 @@ async def ingest_batch_logs(
         logger.exception("Error ingesting batch")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error ingesting batch: {str(e)}",
+            detail="Error ingesting batch",
         )
 
 
@@ -153,7 +162,7 @@ async def ingest_jobs(
         logger.exception("Error ingesting job log entry")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error ingesting job log entry: {str(e)}",
+            detail="Error ingesting job log entry",
         )
 
 
@@ -176,7 +185,7 @@ async def ingest_scheduled_tasks(
         logger.exception("Error ingesting scheduled task log entry")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error ingesting scheduled task log entry: {str(e)}",
+            detail="Error ingesting scheduled task log entry",
         )
 
 
@@ -202,5 +211,5 @@ async def ingest_jobs_batch(
         logger.exception("Error ingesting batch")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Error ingesting batch: {str(e)}",
+            detail="Error ingesting batch",
         )

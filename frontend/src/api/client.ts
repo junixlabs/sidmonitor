@@ -61,6 +61,9 @@ import type {
   InboundEndpointStats,
   DsnResponse,
   AuditLogListResponse,
+  FeedbackEntry,
+  FeedbackCreateData,
+  FeedbackListResponse,
 } from '../types'
 
 const api = axios.create({
@@ -85,6 +88,9 @@ api.interceptors.request.use((config) => {
   return config
 })
 
+// Flag to prevent multiple 401 redirects
+let isRedirecting = false
+
 // Response interceptor to handle auth errors and log API errors
 api.interceptors.response.use(
   (response) => response,
@@ -95,11 +101,16 @@ api.interceptors.response.use(
     const message = error.message || 'Unknown error'
     errorLogger.logApiError(endpoint, status, message)
 
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      localStorage.removeItem('auth')
-      window.location.href = '/login'
+    if (error.response?.status === 401 && !isRedirecting) {
+      // Skip redirect for auth endpoints (login/register) to let their own error handling work
+      const isAuthEndpoint = endpoint.includes('/auth/login') || endpoint.includes('/auth/register')
+      if (!isAuthEndpoint) {
+        isRedirecting = true
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        localStorage.removeItem('auth')
+        window.location.href = '/login'
+      }
     }
     return Promise.reject(error)
   }
@@ -507,6 +518,33 @@ export const inboundApi = {
   getModuleEndpoints: async (moduleName: string, projectId?: string): Promise<InboundEndpointStats[]> => {
     const response = await api.get(`/stats/inbound/modules/${encodeURIComponent(moduleName)}/endpoints`, { params: { project_id: projectId } })
     return response.data
+  },
+}
+
+// Feedback API
+export const feedbackApi = {
+  list: async (params?: { status?: string; category?: string; page?: number; per_page?: number }): Promise<FeedbackListResponse> => {
+    const response = await api.get('/feedback', { params })
+    return response.data
+  },
+
+  get: async (id: string): Promise<FeedbackEntry> => {
+    const response = await api.get(`/feedback/${id}`)
+    return response.data
+  },
+
+  create: async (data: FeedbackCreateData): Promise<FeedbackEntry> => {
+    const response = await api.post('/feedback', data)
+    return response.data
+  },
+
+  update: async (id: string, data: { status?: string; priority?: string }): Promise<FeedbackEntry> => {
+    const response = await api.patch(`/feedback/${id}`, data)
+    return response.data
+  },
+
+  delete: async (id: string): Promise<void> => {
+    await api.delete(`/feedback/${id}`)
   },
 }
 

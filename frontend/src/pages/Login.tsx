@@ -85,6 +85,7 @@ export default function Login() {
                 type="email"
                 autoComplete="email"
                 required
+                aria-label="Email address"
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-border-primary bg-surface placeholder-text-muted text-text-primary rounded-t-md focus:outline-none focus:ring-accent focus:border-accent focus:z-10 sm:text-sm"
                 placeholder="Email address"
                 value={email}
@@ -102,6 +103,7 @@ export default function Login() {
                 type="password"
                 autoComplete="current-password"
                 required
+                aria-label="Password"
                 className="appearance-none rounded-none relative block w-full px-3 py-2 border border-border-primary bg-surface placeholder-text-muted text-text-primary rounded-b-md focus:outline-none focus:ring-accent focus:border-accent focus:z-10 sm:text-sm"
                 placeholder="Password"
                 value={password}

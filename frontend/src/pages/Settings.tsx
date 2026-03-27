@@ -196,6 +196,7 @@ function GeneralTab() {
 
 function SdkSetupTab() {
   const { copiedField, copy } = useCopyToClipboard()
+  const currentHost = typeof window !== 'undefined' ? window.location.origin : 'https://your-sidmonitor-host'
 
   const { data: dsnInfo, isLoading: dsnLoading } = useQuery({
     queryKey: ['dsnInfo'],
@@ -290,14 +291,14 @@ OBSERVATORY_ENABLED=true
 OBSERVATORY_EXPORTER=sidmonitor
 
 # SidMonitor backend endpoint
-SIDMONITOR_ENDPOINT=http://your-sidmonitor-host:8000
+SIDMONITOR_ENDPOINT=${currentHost}
 
 # API Key (from Settings > API Keys)
 SIDMONITOR_API_KEY=your-api-key-here`}
               </pre>
             </div>
             <button
-              onClick={() => copy(`# Enable Observatory monitoring\nOBSERVATORY_ENABLED=true\nOBSERVATORY_EXPORTER=sidmonitor\n\n# SidMonitor backend endpoint\nSIDMONITOR_ENDPOINT=http://your-sidmonitor-host:8000\n\n# API Key (from Settings > API Keys)\nSIDMONITOR_API_KEY=your-api-key-here`, 'env')}
+              onClick={() => copy(`# Enable Observatory monitoring\nOBSERVATORY_ENABLED=true\nOBSERVATORY_EXPORTER=sidmonitor\n\n# SidMonitor backend endpoint\nSIDMONITOR_ENDPOINT=${currentHost}\n\n# API Key (from Settings > API Keys)\nSIDMONITOR_API_KEY=your-api-key-here`, 'env')}
               className="mt-2 px-4 py-2 bg-surface-tertiary hover:bg-surface-tertiary rounded-md text-sm text-text-secondary"
             >
               {copiedField === 'env' ? 'Copied!' : 'Copy .env configuration'}
