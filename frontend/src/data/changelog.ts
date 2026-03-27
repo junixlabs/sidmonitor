@@ -14,6 +14,25 @@ export interface ChangelogEntry {
 
 export const changelog: ChangelogEntry[] = [
   {
+    version: '0.7.0',
+    date: '2026-03-27',
+    title: 'Feedback System, MCP Server & 30+ Bug Fixes',
+    changes: [
+      { type: 'added', text: 'In-app feedback widget — floating button with slide-out panel for submitting bug reports, feature requests, and questions' },
+      { type: 'added', text: 'Feedback admin page — view, filter, update status, and delete feedback entries with pagination' },
+      { type: 'added', text: 'Feedback REST API — full CRUD endpoints with org-scoped access control' },
+      { type: 'added', text: 'MCP (Model Context Protocol) server — per-project AI agent integration with 12 tools for querying logs, stats, errors, and managing feedback' },
+      { type: 'added', text: 'ErrorBoundary component — graceful error handling with retry for page crashes' },
+      { type: 'added', text: 'ScrollToTop component — auto-scroll on route navigation' },
+      { type: 'added', text: 'PageSkeleton loading component for lazy-loaded routes' },
+      { type: 'fixed', text: 'CORS configuration — explicit methods and headers instead of wildcards' },
+      { type: 'fixed', text: 'Timezone-aware DateTime columns for Feedback model (asyncpg offset-naive/aware mismatch)' },
+      { type: 'fixed', text: 'AuditLog reserved "metadata" attribute renamed to "extra_data"' },
+      { type: 'fixed', text: '30+ frontend and backend issues including type mismatches, missing error handling, inconsistent API responses, and UI polish' },
+      { type: 'changed', text: 'MCP dependency isolated to separate requirements-mcp.txt to avoid anyio version conflicts' },
+    ],
+  },
+  {
     version: '0.6.0',
     date: '2026-03-14',
     title: 'Settings Hierarchy & Code Quality',
