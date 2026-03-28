@@ -124,7 +124,10 @@ export default function Feedback() {
         ) : data && data.items.length === 0 ? (
           <div className="p-12 text-center">
             <MessageSquare className="w-10 h-10 text-text-muted mx-auto mb-3" />
-            <p className="text-text-muted">No feedback entries yet</p>
+            <p className="text-sm font-medium text-text-secondary">No feedback entries yet</p>
+            <p className="text-sm text-text-muted mt-1">
+              Feedback will appear here when users submit reports through the in-app widget.
+            </p>
           </div>
         ) : (
           <div className="divide-y divide-border-subtle">

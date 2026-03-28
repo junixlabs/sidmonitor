@@ -1,4 +1,5 @@
 import { useState, useCallback, useMemo } from 'react'
+import { Link } from 'react-router-dom'
 import { format } from 'date-fns'
 import { cn } from '@/lib/utils'
 import { useOutboundLogs, useOutboundServices, useOutboundHosts, useOutboundStats, useOutboundServiceHealth, useOutboundHostHealth } from '../hooks/useOutboundLogs'
@@ -422,8 +423,15 @@ export default function OutboundAPIs() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="px-6 py-8 text-center text-text-muted">
-                      No outbound logs found. Try adjusting your filters.
+                    <td colSpan={6} className="px-6 py-12 text-center">
+                      <p className="text-sm font-medium text-text-secondary">No outbound logs found</p>
+                      <p className="text-sm text-text-muted mt-1">Try adjusting your filters or check that your SDK is sending data.</p>
+                      <Link
+                        to="../settings"
+                        className="inline-flex items-center gap-1.5 mt-3 px-3 py-1.5 text-sm font-medium text-accent hover:text-accent-hover border border-accent/30 rounded-lg hover:bg-accent/5 transition-colors"
+                      >
+                        SDK Setup
+                      </Link>
                     </td>
                   </tr>
                 )}

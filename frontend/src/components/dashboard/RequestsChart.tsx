@@ -9,6 +9,8 @@ import {
   Legend,
 } from 'recharts'
 import { format, parseISO } from 'date-fns'
+import { Link } from 'react-router-dom'
+import { BarChart3 } from 'lucide-react'
 import { EmptyState } from '@/components/ui'
 import type { TimeSeriesPoint } from '../../types'
 
@@ -31,7 +33,20 @@ export default function RequestsChart({ data, loading = false }: RequestsChartPr
 
   if (data.length === 0) {
     return (
-      <EmptyState title="No data available" description="Try selecting a different time range." className="h-64" />
+      <EmptyState
+        icon={<BarChart3 className="w-10 h-10" />}
+        title="No request data yet"
+        description="Data will appear here once your application starts sending requests through the SDK."
+        action={
+          <Link
+            to="../settings"
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-accent hover:text-accent-hover border border-accent/30 rounded-lg hover:bg-accent/5 transition-colors"
+          >
+            Configure SDK
+          </Link>
+        }
+        className="h-64"
+      />
     )
   }
 

@@ -78,13 +78,38 @@ export default function Dashboard() {
   const errorRateSeverity = getErrorRateSeverity(stats?.error_rate)
   const showCriticalAlert = !dismissedAlert && errorRateSeverity === 'critical' && stats?.error_rate !== undefined
 
+  // Compute system health from real data
+  const systemHealth = useMemo(() => {
+    if (statsLoading || inboundStatsLoading || outboundStatsLoading || jobStatsLoading) return 'loading'
+    const issues: string[] = []
+    if (stats?.error_rate !== undefined && stats.error_rate > 20) issues.push('High error rate')
+    if (inboundStats?.success_rate !== undefined && inboundStats.success_rate < 95) issues.push('Inbound degraded')
+    if (outboundStats?.success_rate !== undefined && outboundStats.success_rate < 95) issues.push('Outbound degraded')
+    if (jobStats?.failure_count !== undefined && jobStats.failure_count > 0) issues.push('Job failures')
+    if (issues.length === 0) return 'healthy'
+    if (stats?.error_rate !== undefined && stats.error_rate > 50) return 'critical'
+    return 'degraded'
+  }, [stats, inboundStats, outboundStats, jobStats, statsLoading, inboundStatsLoading, outboundStatsLoading, jobStatsLoading])
+
+  const healthConfig = {
+    loading: { dot: 'bg-text-muted animate-pulse', text: 'Checking systems...', color: 'text-text-muted' },
+    healthy: { dot: 'bg-status-success', text: 'All Systems Operational', color: 'text-status-success' },
+    degraded: { dot: 'bg-status-warning', text: 'Partial Degradation Detected', color: 'text-status-warning' },
+    critical: { dot: 'bg-status-danger animate-pulse', text: 'Critical Issues Detected', color: 'text-status-danger' },
+  }
+
+  const health = healthConfig[systemHealth]
+
   return (
     <div className="px-4 py-6 sm:px-0">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Dashboard</h1>
-          <p className="text-sm text-text-muted mt-0.5">Monitor your application health and performance</p>
+          <div className="flex items-center gap-2 mt-1">
+            <span className={`w-2 h-2 rounded-full ${health.dot}`} />
+            <span className={`text-sm font-medium ${health.color}`}>{health.text}</span>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <div className="flex bg-surface-tertiary/50 p-0.5 rounded-lg border border-border-subtle">
