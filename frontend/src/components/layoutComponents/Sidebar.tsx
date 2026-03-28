@@ -55,6 +55,11 @@ const projectNavGroups: NavGroup[] = [
         label: 'Outbound APIs',
         icon: <ArrowRight className="w-5 h-5" />,
       },
+      {
+        page: 'endpoints',
+        label: 'Endpoints',
+        icon: <BarChart3 className="w-5 h-5" />,
+      },
     ],
   },
   {

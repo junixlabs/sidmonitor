@@ -1,9 +1,10 @@
 import { useSearchParams, Link } from 'react-router-dom'
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useCallback } from 'react'
 import { ArrowDownRight, ArrowUpRight, RefreshCw, ChevronRight, XCircle, Check, Activity, AlertTriangle, Clock, Zap } from 'lucide-react'
 import StatsCard from '../components/dashboard/StatsCard'
 import RequestsChart from '../components/dashboard/RequestsChart'
-import { ErrorAlert } from '@/components/ui'
+import { ErrorAlert, TimeRangeSelector } from '@/components/ui'
+import type { PresetRange, DateRange } from '@/components/ui'
 import { useStats, useTimeSeries } from '../hooks/useLogs'
 import { useInboundStats, useInboundModuleHealth } from '../hooks/useInboundLogs'
 import { useOutboundStats, useOutboundServiceHealth } from '../hooks/useOutboundLogs'
@@ -11,40 +12,43 @@ import { useJobStats } from '../hooks/useJobs'
 import { useProjectUrl } from '../hooks/useProjectUrl'
 import { formatNumber, formatPercentage, formatResponseTime } from '../utils/format'
 
-type TimeRange = '1h' | '6h' | '24h' | '7d'
+const DASHBOARD_PRESETS: PresetRange[] = ['1h', '6h', '24h', '7d']
+
+function presetToMs(preset: PresetRange): number {
+  const map: Record<PresetRange, number> = {
+    '1h': 3600_000,
+    '6h': 6 * 3600_000,
+    '24h': 24 * 3600_000,
+    '7d': 7 * 24 * 3600_000,
+    '30d': 30 * 24 * 3600_000,
+  }
+  return map[preset]
+}
 
 export default function Dashboard() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [dismissedAlert, setDismissedAlert] = useState(false)
+  const [customRange, setCustomRange] = useState<DateRange | null>(null)
   const projectUrl = useProjectUrl()
 
-  const timeRange = (searchParams.get('range') as TimeRange) || '24h'
+  const presetParam = searchParams.get('range') as PresetRange | null
+  const activePreset: PresetRange | null = customRange ? null : (presetParam || '24h')
 
-  const startDate = useMemo(() => {
-    const now = new Date()
-    const start = new Date(now)
-
-    switch (timeRange) {
-      case '1h':
-        start.setHours(now.getHours() - 1)
-        break
-      case '6h':
-        start.setHours(now.getHours() - 6)
-        break
-      case '24h':
-        start.setHours(now.getHours() - 24)
-        break
-      case '7d':
-        start.setDate(now.getDate() - 7)
-        break
+  const { startDate, endDate } = useMemo(() => {
+    if (customRange) {
+      return { startDate: customRange.start, endDate: customRange.end }
     }
-
-    return start.toISOString()
-  }, [timeRange])
+    const preset = presetParam || '24h'
+    const now = new Date()
+    return {
+      startDate: new Date(now.getTime() - presetToMs(preset as PresetRange)).toISOString(),
+      endDate: now.toISOString(),
+    }
+  }, [presetParam, customRange])
 
   // Fetch overall stats
-  const { data: stats, isLoading: statsLoading, error: statsError } = useStats('all', startDate)
-  const { data: timeSeries, isLoading: timeSeriesLoading } = useTimeSeries({ start_date: startDate }, 'all')
+  const { data: stats, isLoading: statsLoading, error: statsError } = useStats('all', startDate, endDate)
+  const { data: timeSeries, isLoading: timeSeriesLoading } = useTimeSeries({ start_date: startDate, end_date: endDate }, 'all')
 
   // Health cards data
   const { data: inboundStats, isLoading: inboundStatsLoading } = useInboundStats()
@@ -53,14 +57,21 @@ export default function Dashboard() {
   const { data: outboundServiceHealth, isLoading: outboundServiceHealthLoading } = useOutboundServiceHealth()
   const { data: jobStats, isLoading: jobStatsLoading } = useJobStats('24h')
 
-  const handleTimeRangeChange = (range: TimeRange) => {
-    if (range === '24h') {
+  const handlePresetChange = useCallback((preset: PresetRange) => {
+    setCustomRange(null)
+    if (preset === '24h') {
       searchParams.delete('range')
     } else {
-      searchParams.set('range', range)
+      searchParams.set('range', preset)
     }
     setSearchParams(searchParams)
-  }
+  }, [searchParams, setSearchParams])
+
+  const handleCustomRangeChange = useCallback((range: DateRange) => {
+    setCustomRange(range)
+    searchParams.delete('range')
+    setSearchParams(searchParams)
+  }, [searchParams, setSearchParams])
 
   const getErrorRateSeverity = (errorRate: number | undefined): 'critical' | 'warning' | 'normal' | undefined => {
     if (errorRate === undefined) return undefined
@@ -111,23 +122,13 @@ export default function Dashboard() {
             <span className={`text-sm font-medium ${health.color}`}>{health.text}</span>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div className="flex bg-surface-tertiary/50 p-0.5 rounded-lg border border-border-subtle">
-            {(['1h', '6h', '24h', '7d'] as TimeRange[]).map((range) => (
-              <button
-                key={range}
-                onClick={() => handleTimeRangeChange(range)}
-                className={`px-3 py-1.5 text-xs font-medium rounded-md transition-all ${
-                  timeRange === range
-                    ? 'bg-accent text-white shadow-sm'
-                    : 'text-text-secondary hover:text-text-primary'
-                }`}
-              >
-                {range}
-              </button>
-            ))}
-          </div>
-        </div>
+        <TimeRangeSelector
+          presets={DASHBOARD_PRESETS}
+          activePreset={activePreset}
+          onPresetChange={handlePresetChange}
+          customRange={customRange}
+          onCustomRangeChange={handleCustomRangeChange}
+        />
       </div>
 
       {statsError && (
