@@ -32,7 +32,7 @@ class OutboundLogEntry(BaseModel):
     method: str = Field(..., description="HTTP method (GET, POST, etc.)")
 
     # Response
-    status_code: int = Field(..., ge=100, le=599, description="HTTP status code")
+    status_code: int = Field(..., ge=0, le=599, description="HTTP status code (0 for connection errors)")
     latency_ms: float = Field(
         ..., ge=0, description="Response time in milliseconds",
         validation_alias=AliasChoices("latency_ms", "response_time_ms"),
