@@ -78,8 +78,8 @@ async def get_dashboard_stats(
             # Calculate previous period with same duration
             prev_period_query = """
                 SELECT
-                    toDateTime(%(start_date)s) - (toDateTime(%(end_date)s) - toDateTime(%(start_date)s)) as prev_start,
-                    toDateTime(%(start_date)s) as prev_end
+                    parseDateTimeBestEffort(%(start_date)s) - (parseDateTimeBestEffort(%(end_date)s) - parseDateTimeBestEffort(%(start_date)s)) as prev_start,
+                    parseDateTimeBestEffort(%(start_date)s) as prev_end
             """
             period_result = client.query(prev_period_query, parameters=params)
             if period_result.result_rows:
