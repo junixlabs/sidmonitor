@@ -567,13 +567,11 @@ async def get_outbound_service_endpoints(
 
         # Extract path from target_url and normalize numeric segments to {id}
         # Use ClickHouse's URL functions and regex to group similar endpoints
+        # Note: ClickHouse uses RE2 regex which does not support lookahead (?=)
         query = f"""
             WITH
-                -- Extract path from URL
                 path(target_url) as url_path,
-                -- Replace numeric segments with {{id}}
-                -- Pattern: replace /123/ or /123 at end with /{{id}}
-                replaceRegexpAll(url_path, '/[0-9]+(?=/|$)', '/{{id}}') as normalized_path
+                replaceRegexpAll(url_path, '/[0-9]+', '/{{id}}') as normalized_path
             SELECT
                 normalized_path as endpoint_pattern,
                 method,

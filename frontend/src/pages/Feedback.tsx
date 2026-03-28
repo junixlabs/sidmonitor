@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { MessageSquare, Bug, Star, Lightbulb, HelpCircle, Filter, Trash2 } from 'lucide-react'
+import { MessageSquare, Bug, Star, Lightbulb, HelpCircle, Filter, Trash2, RefreshCw } from 'lucide-react'
 import { feedbackApi } from '@/api/client'
 import type { FeedbackEntry, FeedbackStatus, FeedbackCategory } from '@/types'
 import { toast } from 'sonner'
@@ -35,7 +35,7 @@ export default function Feedback() {
   const [categoryFilter, setCategoryFilter] = useState<string>('')
   const [expandedId, setExpandedId] = useState<string | null>(null)
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ['feedback', page, statusFilter, categoryFilter],
     queryFn: () => feedbackApi.list({
       page,
@@ -71,7 +71,7 @@ export default function Feedback() {
         <div>
           <h1 className="text-2xl font-bold text-text-primary">Feedback & Issues</h1>
           <p className="text-sm text-text-muted mt-1">
-            {data ? `${data.total} total entries` : 'Loading...'}
+            {data ? `${data.total} total entries` : isError ? 'Failed to load' : 'Loading...'}
           </p>
         </div>
       </div>
@@ -108,6 +108,19 @@ export default function Feedback() {
       <div className="bg-surface rounded-lg border border-border-primary overflow-hidden">
         {isLoading ? (
           <div className="p-8 text-center text-text-muted">Loading feedback...</div>
+        ) : isError ? (
+          <div className="p-12 text-center">
+            <MessageSquare className="w-10 h-10 text-status-danger mx-auto mb-3" />
+            <p className="text-text-secondary font-medium mb-1">Failed to load feedback</p>
+            <p className="text-sm text-text-muted mb-4">Something went wrong. Please try again.</p>
+            <button
+              onClick={() => refetch()}
+              className="inline-flex items-center gap-2 px-4 py-2 text-sm border border-border-primary rounded-md hover:bg-surface-secondary transition-colors"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Retry
+            </button>
+          </div>
         ) : data && data.items.length === 0 ? (
           <div className="p-12 text-center">
             <MessageSquare className="w-10 h-10 text-text-muted mx-auto mb-3" />
