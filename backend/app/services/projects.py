@@ -15,7 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import get_settings
-from app.models.database import ApiKey, OrganizationMember, Project, User
+from app.models.database import ApiKey, Organization, OrganizationMember, Project, User
 from app.models.project import ApiKeyCreate, ProjectCreate, ProjectUpdate
 
 settings = get_settings()
@@ -166,7 +166,12 @@ async def create_project(
     return project
 
 
-async def get_project_by_slug(slug: str, db: AsyncSession, user: Optional[User] = None) -> Project:
+async def get_project_by_slug(
+    slug: str,
+    db: AsyncSession,
+    user: Optional[User] = None,
+    org_slug: Optional[str] = None,
+) -> Project:
     """
     Get project by slug, scoped to user's organizations.
 
@@ -174,6 +179,7 @@ async def get_project_by_slug(slug: str, db: AsyncSession, user: Optional[User] 
         slug: Project slug
         db: Database session
         user: Current user (used to scope by organization membership)
+        org_slug: Organization slug (used to disambiguate when same project slug exists across orgs)
 
     Returns:
         Project
@@ -183,12 +189,20 @@ async def get_project_by_slug(slug: str, db: AsyncSession, user: Optional[User] 
     """
     query = select(Project).where(Project.slug == slug)
 
+    if org_slug is not None:
+        query = query.join(
+            Organization,
+            Organization.id == Project.organization_id,
+        ).where(Organization.slug == org_slug)
+
     if user is not None:
         query = query.join(
             OrganizationMember,
             (OrganizationMember.organization_id == Project.organization_id)
             & (OrganizationMember.user_id == user.id)
         )
+
+    query = query.limit(1)
 
     result = await db.execute(query)
     project = result.scalar_one_or_none()
