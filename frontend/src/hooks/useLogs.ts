@@ -8,7 +8,7 @@ import { useWorkspaceStore } from '@/stores/workspaceStore'
 
 import type { FilterParams, TimeSeriesParams, DashboardTab } from '@/types'
 
-export function useLogs(params: FilterParams) {
+export function useLogs(params: FilterParams, refetchInterval?: number | false) {
   const projectId = useProjectId()
 
   return useQuery({
@@ -17,6 +17,7 @@ export function useLogs(params: FilterParams) {
     enabled: !!projectId,
     staleTime: CACHE_CONFIG.standard.staleTime,
     gcTime: CACHE_CONFIG.standard.gcTime,
+    refetchInterval: refetchInterval || undefined,
   })
 }
 
