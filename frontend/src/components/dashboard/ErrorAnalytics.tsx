@@ -108,8 +108,8 @@ export default function ErrorAnalytics({ type = 'all', timeRange }: ErrorAnalyti
                   <Tooltip
                     formatter={(value: number) => value.toLocaleString()}
                     contentStyle={{
-                      backgroundColor: '#fff',
-                      border: '1px solid #e5e7eb',
+                      backgroundColor: 'var(--bg-secondary)',
+                      border: '1px solid var(--border-primary)',
                       borderRadius: '6px',
                     }}
                   />
@@ -294,13 +294,13 @@ export default function ErrorAnalytics({ type = 'all', timeRange }: ErrorAnalyti
         ) : formattedTimeline.length > 0 ? (
           <ResponsiveContainer width="100%" height={256}>
             <LineChart data={formattedTimeline}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-              <XAxis dataKey="time" tick={{ fontSize: 12 }} stroke="#9ca3af" />
-              <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+              <XAxis dataKey="time" tick={{ fontSize: 12 }} stroke="var(--text-muted)" />
+              <YAxis tick={{ fontSize: 12 }} stroke="var(--text-muted)" />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #e5e7eb',
+                  backgroundColor: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-primary)',
                   borderRadius: '6px',
                 }}
               />

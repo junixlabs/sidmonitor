@@ -63,19 +63,19 @@ export default function InboundModuleHealth({ data = [], loading = false, onModu
         <h4 className="text-sm font-medium text-text-secondary mb-3">Success Rate by Module</h4>
         <ResponsiveContainer width="100%" height={200}>
           <BarChart data={chartData} layout="vertical">
-            <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-            <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 12 }} stroke="#9ca3af" />
+            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+            <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 12 }} stroke="var(--text-muted)" />
             <YAxis
               type="category"
               dataKey="name"
               tick={{ fontSize: 11 }}
-              stroke="#9ca3af"
+              stroke="var(--text-muted)"
               width={100}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#fff',
-                border: '1px solid #e5e7eb',
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--border-primary)',
                 borderRadius: '6px',
               }}
               formatter={(value: number) => [`${value.toFixed(2)}%`, 'Success Rate']}

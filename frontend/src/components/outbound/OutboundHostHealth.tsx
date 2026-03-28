@@ -80,8 +80,8 @@ export default function OutboundHostHealth({ data = [], loading = false }: Outbo
             </Pie>
             <Tooltip
               contentStyle={{
-                backgroundColor: '#fff',
-                border: '1px solid #e5e7eb',
+                backgroundColor: 'var(--bg-secondary)',
+                border: '1px solid var(--border-primary)',
                 borderRadius: '6px',
               }}
               formatter={(value: number) => [

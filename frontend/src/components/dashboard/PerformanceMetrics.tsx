@@ -156,21 +156,21 @@ export default function PerformanceMetrics({
         ) : (
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={formattedTimeline}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
               <XAxis
                 dataKey="time"
                 tick={{ fontSize: 12 }}
-                stroke="#9ca3af"
+                stroke="var(--text-muted)"
               />
               <YAxis
                 tick={{ fontSize: 12 }}
-                stroke="#9ca3af"
+                stroke="var(--text-muted)"
                 label={{ value: 'Response Time (ms)', angle: -90, position: 'insideLeft', style: { fontSize: 12 } }}
               />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #e5e7eb',
+                  backgroundColor: 'var(--bg-secondary)',
+                  border: '1px solid var(--border-primary)',
                   borderRadius: '6px',
                 }}
                 formatter={(value: number) => `${value.toFixed(2)} ms`}

@@ -85,13 +85,13 @@ export default function TrafficPatterns({ activeTab = 'all' }: TrafficPatternsPr
             <>
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={trafficByMethod}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="method" tick={{ fontSize: 12 }} stroke="#9ca3af" />
-                  <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+                  <XAxis dataKey="method" tick={{ fontSize: 12 }} stroke="var(--text-muted)" />
+                  <YAxis tick={{ fontSize: 12 }} stroke="var(--text-muted)" />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#fff',
-                      border: '1px solid #e5e7eb',
+                      backgroundColor: 'var(--bg-secondary)',
+                      border: '1px solid var(--border-primary)',
                       borderRadius: '6px',
                     }}
                     formatter={(value: number) => formatNumber(value)}
@@ -162,13 +162,13 @@ export default function TrafficPatterns({ activeTab = 'all' }: TrafficPatternsPr
             <>
               <ResponsiveContainer width="100%" height={200}>
                 <BarChart data={trafficByDay}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="day_name" tick={{ fontSize: 12 }} stroke="#9ca3af" />
-                  <YAxis tick={{ fontSize: 12 }} stroke="#9ca3af" />
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+                  <XAxis dataKey="day_name" tick={{ fontSize: 12 }} stroke="var(--text-muted)" />
+                  <YAxis tick={{ fontSize: 12 }} stroke="var(--text-muted)" />
                   <Tooltip
                     contentStyle={{
-                      backgroundColor: '#fff',
-                      border: '1px solid #e5e7eb',
+                      backgroundColor: 'var(--bg-secondary)',
+                      border: '1px solid var(--border-primary)',
                       borderRadius: '6px',
                     }}
                     formatter={(value: number) => formatNumber(value)}
