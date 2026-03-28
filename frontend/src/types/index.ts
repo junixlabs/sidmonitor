@@ -841,3 +841,16 @@ export interface ErrorGroupsResponse {
   server_errors: number
   groups: ErrorGroup[]
 }
+
+// Saved Views types
+export interface SavedView {
+  id: string
+  project_id: string
+  user_id: string
+  name: string
+  filters: FilterParams
+  color?: string
+  is_default: boolean
+  created_at: string
+  updated_at: string
+}

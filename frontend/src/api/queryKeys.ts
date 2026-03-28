@@ -106,6 +106,11 @@ export const queryKeys = createQueryKeyStore({
     apiKeys: (projectSlug: string) => [projectSlug],
   },
 
+  // -- Saved views --
+  savedViews: {
+    list: (projectId: string) => [projectId],
+  },
+
   // -- Static reference data (no projectId) --
   modules: {
     list: null,

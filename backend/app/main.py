@@ -16,6 +16,7 @@ from app.api import (
     organizations,
     outbound,
     projects,
+    saved_views,
     stats,
 )
 from app.api import settings as settings_router
@@ -74,6 +75,7 @@ def create_app() -> FastAPI:
     app.include_router(settings_router.router, prefix="/api", tags=["Settings"])
     app.include_router(frontend_logs.router, prefix="/api", tags=["Frontend Logs"])
     app.include_router(feedback.router, prefix="/api", tags=["Feedback"])
+    app.include_router(saved_views.router, prefix="/api", tags=["Saved Views"])
 
     return app
 

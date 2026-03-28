@@ -258,3 +258,29 @@ class Feedback(Base):
 
     def __repr__(self) -> str:
         return f"<Feedback(id={self.id}, title={self.title}, status={self.status})>"
+
+
+class SavedView(Base):
+    """Saved filter view for quick access to common log queries."""
+    __tablename__ = "saved_views"
+
+    id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    project_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("projects.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[uuid.UUID] = mapped_column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    name: Mapped[str] = mapped_column(String(100), nullable=False)
+    filters: Mapped[dict] = mapped_column(JSON, nullable=False)
+    color: Mapped[Optional[str]] = mapped_column(String(20), nullable=True)
+    is_default: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+
+    # Relationships
+    project: Mapped["Project"] = relationship("Project")
+    user: Mapped["User"] = relationship("User")
+
+    __table_args__ = (
+        Index("idx_saved_views_project_user", "project_id", "user_id"),
+    )
+
+    def __repr__(self) -> str:
+        return f"<SavedView(id={self.id}, name={self.name})>"

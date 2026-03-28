@@ -1,10 +1,12 @@
 import { useState, useCallback, useEffect } from 'react'
 import { Radio, Pause } from 'lucide-react'
 import FilterPanel from '../components/logs/FilterPanel'
+import SavedViewsBar from '../components/logs/SavedViewsBar'
 import LogTable from '../components/logs/LogTable'
 import { DetailsModal, ErrorAlert, ExportButton, Pagination } from '@/components/ui'
 import type { DetailField } from '@/components/ui'
 import { useLogs, useModules } from '../hooks/useLogs'
+import { useSavedViews } from '../hooks/useSavedViews'
 import { downloadFile, convertToCSV, generateFilename } from '../utils/exportHelpers'
 import { DEFAULT_PAGE_SIZE } from '../utils/constants'
 import { cn } from '@/lib/utils'
@@ -42,12 +44,27 @@ export default function Logs() {
   })
   const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null)
   const [liveTail, setLiveTail] = useState(false)
+  const [activeViewId, setActiveViewId] = useState<string | null>(null)
 
   const { data: logsData, isLoading: logsLoading, error: logsError, dataUpdatedAt } = useLogs(
     filters,
     liveTail ? LIVE_TAIL_INTERVAL : false
   )
   const { data: modules = [] } = useModules()
+  const { data: savedViews = [] } = useSavedViews()
+
+  // Auto-apply default saved view on first load
+  useEffect(() => {
+    if (savedViews.length > 0 && !activeViewId) {
+      const defaultView = savedViews.find(v => v.is_default)
+      if (defaultView) {
+        setFilters(prev => ({ ...defaultView.filters, page: 1, page_size: prev.page_size }))
+        setActiveViewId(defaultView.id)
+      }
+    }
+    // Only run when savedViews first loads
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savedViews.length])
 
   // Auto-disable live tail when navigating away from page 1
   useEffect(() => {
@@ -58,7 +75,18 @@ export default function Logs() {
 
   const handleFilterChange = useCallback((newFilters: FilterParams) => {
     setFilters(newFilters)
+    setActiveViewId(null)
   }, [])
+
+  const handleApplyView = useCallback((viewFilters: FilterParams, viewId: string) => {
+    setFilters({ ...viewFilters, page: 1, page_size: filters.page_size })
+    setActiveViewId(viewId)
+  }, [filters.page_size])
+
+  const handleClearView = useCallback(() => {
+    setFilters({ page: 1, page_size: filters.page_size })
+    setActiveViewId(null)
+  }, [filters.page_size])
 
   const handleRowClick = useCallback((log: LogEntry) => {
     setSelectedLog(log)
@@ -156,6 +184,13 @@ export default function Logs() {
         onFilterChange={handleFilterChange}
         modules={modules}
         loading={logsLoading}
+      />
+
+      <SavedViewsBar
+        currentFilters={filters}
+        activeViewId={activeViewId}
+        onApplyView={handleApplyView}
+        onClearView={handleClearView}
       />
 
       {logsError && <ErrorAlert message="Failed to load logs" description="Please check your connection." className="mb-4" />}

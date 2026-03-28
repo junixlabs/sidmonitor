@@ -66,6 +66,7 @@ import type {
   FeedbackListResponse,
   EndpointDetail,
   ErrorGroupsResponse,
+  SavedView,
 } from '../types'
 
 const api = axios.create({
@@ -557,6 +558,28 @@ export const feedbackApi = {
 
   delete: async (id: string): Promise<void> => {
     await api.delete(`/feedback/${id}`)
+  },
+}
+
+// Saved Views API
+export const savedViewsApi = {
+  list: async (projectId: string): Promise<SavedView[]> => {
+    const response = await api.get('/saved-views', { params: { project_id: projectId } })
+    return response.data
+  },
+
+  create: async (projectId: string, data: { name: string; filters: FilterParams; color?: string; is_default?: boolean }): Promise<SavedView> => {
+    const response = await api.post('/saved-views', data, { params: { project_id: projectId } })
+    return response.data
+  },
+
+  update: async (viewId: string, data: { name?: string; filters?: FilterParams; color?: string; is_default?: boolean }): Promise<SavedView> => {
+    const response = await api.patch(`/saved-views/${viewId}`, data)
+    return response.data
+  },
+
+  delete: async (viewId: string): Promise<void> => {
+    await api.delete(`/saved-views/${viewId}`)
   },
 }
 

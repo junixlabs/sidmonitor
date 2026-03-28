@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import type { FilterParams } from '../../types'
 
 interface FilterPanelProps {
@@ -28,6 +28,11 @@ export default function FilterPanel({
   loading = false,
 }: FilterPanelProps) {
   const [localFilters, setLocalFilters] = useState<FilterParams>(filters)
+
+  // Sync local state when parent filters change (e.g. from saved views)
+  useEffect(() => {
+    setLocalFilters(filters)
+  }, [filters])
 
   const handleChange = useCallback(
     (key: keyof FilterParams, value: string) => {
