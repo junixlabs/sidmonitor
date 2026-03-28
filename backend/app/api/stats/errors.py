@@ -343,7 +343,7 @@ async def get_error_groups(
             inner_wb = base_wb()
             inner_wb.eq("endpoint", ep, param_name="g_endpoint")
             inner_wb.eq("method", meth, param_name="g_method")
-            inner_wb.raw(f"status_code = %(g_status_code)s", g_status_code=sc)
+            inner_wb.raw("status_code = %(g_status_code)s", g_status_code=sc)
             inner_where, inner_params = inner_wb.build()
 
             instances_query = f"""
