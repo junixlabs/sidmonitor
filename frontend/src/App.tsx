@@ -30,6 +30,7 @@ const UserSettings = lazy(() => import('./pages/UserSettings'))
 const FeedbackPage = lazy(() => import('./pages/Feedback'))
 const Endpoints = lazy(() => import('./pages/Endpoints'))
 const EndpointDetail = lazy(() => import('./pages/EndpointDetail'))
+const ErrorGroups = lazy(() => import('./pages/ErrorGroups'))
 
 function PageSkeleton() {
   return (
@@ -90,6 +91,7 @@ function AppRoutes() {
           <Route path="outbound-apis" element={<OutboundAPIs />} />
           <Route path="endpoints" element={<Endpoints />} />
           <Route path="endpoint-detail" element={<EndpointDetail />} />
+          <Route path="errors" element={<ErrorGroups />} />
           <Route path="jobs" element={<Jobs />} />
           <Route path="scheduled-tasks" element={<ScheduledTasks />} />
           <Route path="settings" element={<Settings />} />

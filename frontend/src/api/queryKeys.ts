@@ -55,6 +55,7 @@ export const queryKeys = createQueryKeyStore({
     breakdown: (projectId: string, type?: DashboardTab) => [projectId, type],
     endpoints: (projectId: string, limit: number, type?: DashboardTab) => [projectId, limit, type],
     timeline: (projectId: string, params?: TimeSeriesParams, type?: DashboardTab) => [projectId, params, type],
+    groups: (projectId: string, startDate?: string, endDate?: string, statusCategory?: string) => [projectId, startDate, endDate, statusCategory],
   },
 
   // -- User analytics --

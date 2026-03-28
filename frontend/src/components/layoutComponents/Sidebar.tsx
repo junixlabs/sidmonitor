@@ -16,6 +16,7 @@ import {
   Globe,
   CircleHelp,
   MessageSquarePlus,
+  AlertTriangle,
 } from 'lucide-react'
 
 interface SidebarProps {
@@ -59,6 +60,11 @@ const projectNavGroups: NavGroup[] = [
         page: 'endpoints',
         label: 'Endpoints',
         icon: <BarChart3 className="w-5 h-5" />,
+      },
+      {
+        page: 'errors',
+        label: 'Errors',
+        icon: <AlertTriangle className="w-5 h-5" />,
       },
     ],
   },

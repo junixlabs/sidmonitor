@@ -282,3 +282,14 @@ export function useEndpointDetail(endpoint: string, method: string, startDate?: 
     ...CACHE_CONFIG.standard,
   })
 }
+
+export function useErrorGroups(startDate?: string, endDate?: string, statusCategory?: string) {
+  const projectId = useProjectId()
+
+  return useQuery({
+    queryKey: queryKeys.errors.groups(projectId!, startDate, endDate, statusCategory).queryKey,
+    queryFn: () => logApi.getErrorGroups(projectId, startDate, endDate, statusCategory),
+    enabled: !!projectId,
+    ...CACHE_CONFIG.standard,
+  })
+}

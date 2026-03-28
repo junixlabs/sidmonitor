@@ -281,3 +281,35 @@ class EndpointDetail(BaseModel):
     latency_timeline: list[PerformanceTimelinePoint] = Field(..., description="Latency percentiles over time")
     status_codes: list[EndpointStatusCodeCount] = Field(..., description="Status code distribution")
     recent_errors: list[EndpointRecentError] = Field(..., description="Recent error samples")
+
+
+class ErrorGroupInstance(BaseModel):
+    """A single error occurrence within a group."""
+    request_id: str = Field(..., description="Request ID")
+    timestamp: str = Field(..., description="Timestamp (ISO format)")
+    response_time_ms: float = Field(..., description="Response time in ms")
+    user_id: str = Field("", description="User ID if available")
+    user_name: str = Field("", description="User name if available")
+
+
+class ErrorGroup(BaseModel):
+    """A group of errors sharing the same endpoint, method, and status code."""
+    endpoint: str = Field(..., description="Endpoint path")
+    method: str = Field(..., description="HTTP method")
+    status_code: int = Field(..., description="HTTP status code")
+    status_description: str = Field(..., description="Human-readable status code description")
+    count: int = Field(..., description="Total occurrences")
+    first_seen: str = Field(..., description="Earliest occurrence (ISO format)")
+    last_seen: str = Field(..., description="Most recent occurrence (ISO format)")
+    avg_response_time: float = Field(..., description="Average response time in ms")
+    affected_users: int = Field(..., description="Count of distinct users affected")
+    recent_instances: list[ErrorGroupInstance] = Field(default_factory=list, description="Recent error instances (up to 5)")
+
+
+class ErrorGroupsResponse(BaseModel):
+    """Response for error groups endpoint."""
+    total_errors: int = Field(..., description="Total error count in period")
+    total_groups: int = Field(..., description="Number of distinct error groups")
+    client_errors: int = Field(..., description="4xx error count")
+    server_errors: int = Field(..., description="5xx error count")
+    groups: list[ErrorGroup] = Field(..., description="Error groups sorted by count")

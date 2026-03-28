@@ -811,3 +811,33 @@ export interface EndpointDetail {
   status_codes: EndpointStatusCodeCount[]
   recent_errors: EndpointRecentError[]
 }
+
+// Error Grouping types
+export interface ErrorGroupInstance {
+  request_id: string
+  timestamp: string
+  response_time_ms: number
+  user_id: string
+  user_name: string
+}
+
+export interface ErrorGroup {
+  endpoint: string
+  method: string
+  status_code: number
+  status_description: string
+  count: number
+  first_seen: string
+  last_seen: string
+  avg_response_time: number
+  affected_users: number
+  recent_instances: ErrorGroupInstance[]
+}
+
+export interface ErrorGroupsResponse {
+  total_errors: number
+  total_groups: number
+  client_errors: number
+  server_errors: number
+  groups: ErrorGroup[]
+}

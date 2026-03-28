@@ -65,6 +65,7 @@ import type {
   FeedbackCreateData,
   FeedbackListResponse,
   EndpointDetail,
+  ErrorGroupsResponse,
 } from '../types'
 
 const api = axios.create({
@@ -361,6 +362,11 @@ export const logApi = {
 
   getEndpointDetail: async (endpoint: string, method: string, projectId?: string, startDate?: string, endDate?: string): Promise<EndpointDetail> => {
     const response = await api.get('/stats/endpoint-detail', { params: { endpoint, method, project_id: projectId, start_date: startDate, end_date: endDate } })
+    return response.data
+  },
+
+  getErrorGroups: async (projectId?: string, startDate?: string, endDate?: string, statusCategory?: string): Promise<ErrorGroupsResponse> => {
+    const response = await api.get('/stats/error-groups', { params: { project_id: projectId, start_date: startDate, end_date: endDate, status_category: statusCategory } })
     return response.data
   },
 }

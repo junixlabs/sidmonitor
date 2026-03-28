@@ -12,6 +12,9 @@ from app.models.stats import (
     ErrorCategory,
     ErrorEndpoint,
     ErrorEndpointStatus,
+    ErrorGroup,
+    ErrorGroupInstance,
+    ErrorGroupsResponse,
     ErrorTimelinePoint,
     StatusCodeBreakdown,
 )
@@ -267,3 +270,121 @@ async def get_error_timeline(
     except Exception:
         logger.exception("Error fetching error timeline")
         raise HTTPException(status_code=500, detail="Error fetching error timeline")
+
+
+@router.get("/stats/error-groups", response_model=ErrorGroupsResponse)
+async def get_error_groups(
+    project_id: Optional[str] = Query(None, description="Filter by project ID"),
+    start_date: Optional[str] = Query(None),
+    end_date: Optional[str] = Query(None),
+    status_category: Optional[Literal["all", "4xx", "5xx"]] = Query("all"),
+    type: Optional[Literal["all", "inbound", "outbound"]] = Query("all", description="Filter by request type"),
+    limit: int = Query(50, ge=1, le=200),
+    _: bool = Depends(verify_auth),
+):
+    """Get errors grouped by endpoint + method + status code."""
+    try:
+        client = get_clickhouse_client()
+
+        # Base conditions
+        def base_wb():
+            wb = WhereBuilder()
+            wb.raw("status_code >= 400")
+            wb.project(project_id).date_range(start_date, end_date, best_effort=True).request_type(type)
+            if status_category == "4xx":
+                wb.raw("status_code >= 400 AND status_code < 500")
+            elif status_category == "5xx":
+                wb.raw("status_code >= 500")
+            return wb
+
+        # Summary counts
+        wb = base_wb()
+        where_clause, params = wb.build()
+
+        summary_query = f"""
+            SELECT
+                count(*) as total,
+                countIf(status_code >= 400 AND status_code < 500) as client_4xx,
+                countIf(status_code >= 500) as server_5xx
+            FROM logs
+            {where_clause}
+        """
+        summary_result = client.query(summary_query, parameters=params)
+        sr = summary_result.result_rows[0] if summary_result.result_rows else (0, 0, 0)
+
+        # Grouped errors
+        wb = base_wb()
+        where_clause, params = wb.build()
+        params["limit"] = limit
+
+        groups_query = f"""
+            SELECT
+                endpoint,
+                method,
+                status_code,
+                count(*) as cnt,
+                min(timestamp) as first_seen,
+                max(timestamp) as last_seen,
+                round(avg(response_time_ms), 2) as avg_rt,
+                uniqExact(user_id) as affected_users
+            FROM logs
+            {where_clause}
+            GROUP BY endpoint, method, status_code
+            ORDER BY cnt DESC
+            LIMIT %(limit)s
+        """
+        groups_result = client.query(groups_query, parameters=params)
+
+        groups = []
+        for row in groups_result.result_rows:
+            ep, meth, sc = row[0], row[1], row[2]
+
+            # Fetch recent 5 instances for this group
+            inner_wb = base_wb()
+            inner_wb.eq("endpoint", ep, param_name="g_endpoint")
+            inner_wb.eq("method", meth, param_name="g_method")
+            inner_wb.raw(f"status_code = %(g_status_code)s", g_status_code=sc)
+            inner_where, inner_params = inner_wb.build()
+
+            instances_query = f"""
+                SELECT request_id, timestamp, response_time_ms, user_id, user_name
+                FROM logs
+                {inner_where}
+                ORDER BY timestamp DESC
+                LIMIT 5
+            """
+            inst_result = client.query(instances_query, parameters=inner_params)
+            instances = [
+                ErrorGroupInstance(
+                    request_id=str(ir[0]),
+                    timestamp=ir[1].isoformat() if hasattr(ir[1], 'isoformat') else str(ir[1]),
+                    response_time_ms=safe_float(ir[2]),
+                    user_id=str(ir[3]) if ir[3] else "",
+                    user_name=str(ir[4]) if ir[4] else "",
+                )
+                for ir in inst_result.result_rows
+            ]
+
+            groups.append(ErrorGroup(
+                endpoint=ep,
+                method=meth,
+                status_code=sc,
+                status_description=STATUS_CODE_DESCRIPTIONS.get(sc, f"HTTP {sc}"),
+                count=row[3] or 0,
+                first_seen=row[4].isoformat() if hasattr(row[4], 'isoformat') else str(row[4]),
+                last_seen=row[5].isoformat() if hasattr(row[5], 'isoformat') else str(row[5]),
+                avg_response_time=safe_float(row[6]),
+                affected_users=row[7] or 0,
+                recent_instances=instances,
+            ))
+
+        return ErrorGroupsResponse(
+            total_errors=sr[0] or 0,
+            total_groups=len(groups),
+            client_errors=sr[1] or 0,
+            server_errors=sr[2] or 0,
+            groups=groups,
+        )
+    except Exception:
+        logger.exception("Error fetching error groups")
+        raise HTTPException(status_code=500, detail="Error fetching error groups")
