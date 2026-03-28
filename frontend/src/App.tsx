@@ -29,6 +29,7 @@ const OrgSettings = lazy(() => import('./pages/OrgSettings'))
 const UserSettings = lazy(() => import('./pages/UserSettings'))
 const FeedbackPage = lazy(() => import('./pages/Feedback'))
 const Endpoints = lazy(() => import('./pages/Endpoints'))
+const EndpointDetail = lazy(() => import('./pages/EndpointDetail'))
 
 function PageSkeleton() {
   return (
@@ -88,6 +89,7 @@ function AppRoutes() {
           <Route path="inbound-apis" element={<InboundAPIs />} />
           <Route path="outbound-apis" element={<OutboundAPIs />} />
           <Route path="endpoints" element={<Endpoints />} />
+          <Route path="endpoint-detail" element={<EndpointDetail />} />
           <Route path="jobs" element={<Jobs />} />
           <Route path="scheduled-tasks" element={<ScheduledTasks />} />
           <Route path="settings" element={<Settings />} />

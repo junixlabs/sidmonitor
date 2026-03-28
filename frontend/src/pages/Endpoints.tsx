@@ -277,7 +277,7 @@ export default function Endpoints() {
                   <tr key={`${ep.method}-${ep.endpoint}-${idx}`} className="hover:bg-surface-secondary/50 transition-colors">
                     <td className="px-4 py-3">
                       <Link
-                        to={projectUrl(`logs?endpoint=${encodeURIComponent(ep.endpoint)}&method=${ep.method}`)}
+                        to={projectUrl(`endpoint-detail?endpoint=${encodeURIComponent(ep.endpoint)}&method=${ep.method}`)}
                         className="text-sm text-text-primary hover:text-accent transition-colors font-mono truncate block max-w-[400px]"
                         title={ep.endpoint}
                       >

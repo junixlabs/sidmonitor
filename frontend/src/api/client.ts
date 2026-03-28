@@ -64,6 +64,7 @@ import type {
   FeedbackEntry,
   FeedbackCreateData,
   FeedbackListResponse,
+  EndpointDetail,
 } from '../types'
 
 const api = axios.create({
@@ -355,6 +356,11 @@ export const logApi = {
 
   getErrorTimeline: async (params?: TimeSeriesParams & { project_id?: string }, type?: DashboardTab): Promise<ErrorTimelinePoint[]> => {
     const response = await api.get('/stats/error-timeline', { params: { ...params, type } })
+    return response.data
+  },
+
+  getEndpointDetail: async (endpoint: string, method: string, projectId?: string, startDate?: string, endDate?: string): Promise<EndpointDetail> => {
+    const response = await api.get('/stats/endpoint-detail', { params: { endpoint, method, project_id: projectId, start_date: startDate, end_date: endDate } })
     return response.data
   },
 }

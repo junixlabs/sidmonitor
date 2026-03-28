@@ -3,6 +3,7 @@
 from fastapi import APIRouter
 
 from app.api.stats.dashboard import router as dashboard_router
+from app.api.stats.endpoint_detail import router as endpoint_detail_router
 from app.api.stats.errors import router as errors_router
 from app.api.stats.performance import router as performance_router
 from app.api.stats.traffic import router as traffic_router
@@ -15,3 +16,4 @@ router.include_router(traffic_router)
 router.include_router(performance_router)
 router.include_router(users_router)
 router.include_router(errors_router)
+router.include_router(endpoint_detail_router)

@@ -111,5 +111,6 @@ export const queryKeys = createQueryKeyStore({
   },
   endpoints: {
     list: null,
+    detail: (projectId: string, endpoint: string, method: string, startDate?: string, endDate?: string) => [projectId, endpoint, method, startDate, endDate],
   },
 })

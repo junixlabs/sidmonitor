@@ -241,3 +241,43 @@ class ThroughputStats(BaseModel):
     peak_requests_per_minute: float = Field(..., description="Peak requests per minute observed")
     avg_requests_per_second: float = Field(..., description="Average requests per second over the period")
     timeline: list[ThroughputTimeline] = Field(..., description="Throughput over time")
+
+
+class EndpointDetailSummary(BaseModel):
+    """Summary statistics for a specific endpoint."""
+    endpoint: str = Field(..., description="Endpoint path pattern")
+    method: str = Field(..., description="HTTP method")
+    request_count: int = Field(..., description="Total number of requests")
+    error_count: int = Field(..., description="Total error responses (4xx/5xx)")
+    error_rate: float = Field(..., description="Error rate percentage (0-100)")
+    avg_response_time: float = Field(..., description="Average response time in milliseconds")
+    p50_response_time: float = Field(..., description="50th percentile response time in ms")
+    p95_response_time: float = Field(..., description="95th percentile response time in ms")
+    p99_response_time: float = Field(..., description="99th percentile response time in ms")
+    requests_per_minute: float = Field(..., description="Average RPM")
+
+
+class EndpointStatusCodeCount(BaseModel):
+    """Status code distribution for an endpoint."""
+    status_code: int = Field(..., description="HTTP status code")
+    count: int = Field(..., description="Number of responses")
+    percentage: float = Field(..., description="Percentage of total (0-100)")
+
+
+class EndpointRecentError(BaseModel):
+    """A recent error log entry for an endpoint."""
+    request_id: str = Field(..., description="Request ID")
+    timestamp: str = Field(..., description="Timestamp (ISO format)")
+    status_code: int = Field(..., description="HTTP status code")
+    response_time_ms: float = Field(..., description="Response time in ms")
+    user_id: str = Field("", description="User ID if available")
+    user_name: str = Field("", description="User name if available")
+
+
+class EndpointDetail(BaseModel):
+    """Complete detail view for a single endpoint."""
+    summary: EndpointDetailSummary = Field(..., description="Summary statistics")
+    timeseries: list[TimeSeriesPoint] = Field(..., description="Request/error counts over time")
+    latency_timeline: list[PerformanceTimelinePoint] = Field(..., description="Latency percentiles over time")
+    status_codes: list[EndpointStatusCodeCount] = Field(..., description="Status code distribution")
+    recent_errors: list[EndpointRecentError] = Field(..., description="Recent error samples")

@@ -774,3 +774,40 @@ export interface FeedbackListResponse {
   page: number
   per_page: number
 }
+
+// Endpoint Detail types
+export interface EndpointDetailSummary {
+  endpoint: string
+  method: string
+  request_count: number
+  error_count: number
+  error_rate: number
+  avg_response_time: number
+  p50_response_time: number
+  p95_response_time: number
+  p99_response_time: number
+  requests_per_minute: number
+}
+
+export interface EndpointStatusCodeCount {
+  status_code: number
+  count: number
+  percentage: number
+}
+
+export interface EndpointRecentError {
+  request_id: string
+  timestamp: string
+  status_code: number
+  response_time_ms: number
+  user_id: string
+  user_name: string
+}
+
+export interface EndpointDetail {
+  summary: EndpointDetailSummary
+  timeseries: TimeSeriesPoint[]
+  latency_timeline: PerformanceTimelinePoint[]
+  status_codes: EndpointStatusCodeCount[]
+  recent_errors: EndpointRecentError[]
+}

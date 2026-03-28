@@ -271,3 +271,14 @@ export function useGlobalStats(timeRange?: string) {
     ...CACHE_CONFIG.analytics,
   })
 }
+
+export function useEndpointDetail(endpoint: string, method: string, startDate?: string, endDate?: string) {
+  const projectId = useProjectId()
+
+  return useQuery({
+    queryKey: queryKeys.endpoints.detail(projectId!, endpoint, method, startDate, endDate).queryKey,
+    queryFn: () => logApi.getEndpointDetail(endpoint, method, projectId, startDate, endDate),
+    enabled: !!projectId && !!endpoint && !!method,
+    ...CACHE_CONFIG.standard,
+  })
+}
